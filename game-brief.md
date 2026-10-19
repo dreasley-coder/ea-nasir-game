@@ -11,29 +11,18 @@ You are Ea-nasir, a copper merchant in ancient Ur. Your goal: make as much silve
 Anyone who enjoys the meme. A round takes about two minutes.
 
 ## Main action
-For each customer, look at your ingot's true quality, then choose a price (1 to 25 shekels of silver) and press **Make offer**.
+Negotiate, then decide which ingot to hand over. For each customer: claim a grade, name a price, respond to any counter-offer, and choose which ingot from your stock goes in their sack.
 
 ## A round
 - Instructions show first. Nothing happens until **Open the shop** is pressed.
-- Five customers arrive one at a time ("Customer 1 of 5"). The fifth is always Nanni.
-- **You** see the ingot's true grade and its fair price. **The customer** only sees your pitch.
-- Each customer has a secret limit (the most they'll pay), based on their wealth and your **reputation**, and a hidden **eye for copper**. Their description hints at both through who they are, what the copper is for, and who they're buying it for.
-- Ea-nasir and every customer have an imagined portrait (no real picture of Ea-nasir survives).
-- **Price at or below their limit:** "Sold!" You gain that much silver.
-- **Price above their limit:** they walk out. No silver.
-- **Fair sale** (at or below fair price): reputation rises a little.
-- **Overcharging, not noticed:** they leave happy; you keep the silver.
-- **Overcharging, noticed:** you keep the silver, but a complaint tablet arrives and reputation drops.
-- **Noticed, and more than 50% above fair price:** the customer returns the ingot. No silver, and a complaint tablet.
-
-## Grades and fair prices (starting values, adjustable)
-| Grade | Fair price |
-| --- | --- |
-| Fine copper | 10 |
-| Decent | 8 |
-| Lumpy | 6 |
-| Poor | 4 |
-| Mostly rock | 2 |
+- You start with five ingots, one of each grade. Five customers arrive one at a time; the fifth is always Nanni.
+- Each customer's description hints at their wealth and how well they know copper. Neither is shown directly.
+- You claim a grade and ask a price. The customer accepts, counters once, or walks out if insulted. You accept or refuse a counter.
+- After a deal, you hand over any ingot from stock. If it's worse than promised, the customer may notice:
+  - **Not noticed:** they leave happy and reputation rises.
+  - **Noticed, price reasonable for what they got:** they keep it and send a complaint tablet.
+  - **Noticed, price far too high:** they return it (no silver, the ingot comes back) and send a complaint tablet.
+- Complaints lower your reputation, and a lower reputation lowers what later customers will pay.
 
 ## Scoring and result
 - Score: total shekels of silver.
@@ -52,10 +41,10 @@ Real money, accounts, AI-written customers, online leaderboards, sound, animatio
 
 ## Five checks that prove it works
 1. Nothing happens until Open the shop is pressed, then "Customer 1 of 5" appears.
-2. An accepted offer adds exactly that price to your silver.
-3. A rejected offer leaves silver unchanged, and the next customer arrives.
-4. Overcharging brings a complaint tablet and lowers reputation; charging more than 50% over fair price returns the ingot for 0 silver; a fair sale does neither.
+2. An honest deal adds exactly the agreed price to your silver.
+3. A walkout or refused counter leaves silver unchanged, and the next customer arrives.
+4. A noticed swap brings a complaint tablet and lowers reputation; if the price was far too high, the ingot is returned for 0 silver and goes back into stock.
 5. After customer 5, the rating matches total silver, and Open a new shop resets everything.
 
 ## Status
-Brief and rules agreed (goal: most silver; return rule added). Not built yet.
+Version 4: negotiation, claimed vs delivered quality, and stock. Built and tested.

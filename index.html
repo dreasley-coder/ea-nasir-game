@@ -33,6 +33,7 @@
     }
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   body {
     margin: 0;
     min-height: 100vh;
@@ -174,6 +175,29 @@
 
   .rating { font-size: 1.8rem; color: var(--copper); font-weight: bold; margin: 4px 0 8px; }
   .footnote { font-size: 0.85rem; color: var(--muted); margin-top: 16px; text-align: center; }
+
+  .stock { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 2px; }
+  .chip { display: flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted);
+    background: rgba(138, 90, 53, 0.08); border-radius: 6px; padding: 3px 7px 3px 3px; }
+  .section-label { font-weight: bold; color: var(--copper); margin: 14px 0 6px; font-size: 0.95rem; }
+  .grade-pick { display: grid; grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); gap: 6px; }
+  .grade-pick button, .deliver-list button {
+    background: var(--panel); color: var(--ink); border: 2px solid var(--clay-dark);
+    padding: 6px 6px; font-size: 0.9rem; line-height: 1.25; text-align: center;
+  }
+  .grade-pick button small { display: block; color: var(--muted); font-size: 0.75rem; }
+  .grade-pick button[aria-pressed="true"] { background: var(--lapis); color: #fdf6ea; border-color: var(--lapis); }
+  .grade-pick button[aria-pressed="true"] small { color: #dfe6f3; }
+  .deliver-list { display: grid; gap: 8px; margin-bottom: 4px; }
+  .deliver-list button { display: flex; align-items: center; gap: 12px; text-align: left; padding: 8px 12px; }
+  .deliver-list .tag { font-size: 0.85rem; color: var(--muted); }
+  .deliver-list .tag.worse { color: var(--danger); }
+  .deliver-list .tag.same { color: var(--verdigris); }
+  .two-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .secondary { display: block; width: 100%; padding: 13px; font-size: 1.1rem; font-weight: bold;
+    background: var(--panel); color: var(--ink); border: 2px solid var(--clay-dark); }
+  .deal { background: rgba(138, 90, 53, 0.08); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
+
 </style>
 </head>
 <body>
@@ -199,21 +223,20 @@
       <div><span id="introPortrait"></span><div class="seller-tag">Ea-nasir (you)</div></div>
       <div>
         <h2>Make as much silver as you can</h2>
-        <p>You have five copper ingots of… varying quality. Five customers are on their way.</p>
+        <p>Five ingots on your shelf, one of each grade. Five customers on their way.</p>
       </div>
     </div>
     <ol>
-      <li>You know each ingot’s true quality. Your customer doesn’t.</li>
-      <li>Pick a price from 1 to 25 shekels and make one offer.</li>
-      <li>Too high for them, and they walk out. Richer customers pay more, and so does everyone when your reputation is good.</li>
-      <li>Some customers know copper well. Others can’t tell an ingot from a rock. Overcharge someone who doesn’t notice, and they leave happy.</li>
-      <li>Overcharge someone who <em>does</em> notice, and a complaint tablet follows. Your reputation drops and later customers pay less. If you charged more than 50% over the fair price, they return the ingot and you keep nothing.</li>
+      <li>Tell each customer which grade you’re selling, and name your price.</li>
+      <li>They accept, make one counter-offer, or walk out if your price insults them. If they counter, you accept or refuse.</li>
+      <li>Once a price is agreed, choose which ingot actually goes in their sack. It doesn’t have to be the one you promised.</li>
+      <li>They inspect it. Someone who knows copper may spot a swap: then they complain, or return it if you charged far too much for what they got. Complaints hurt your reputation, and later customers pay less.</li>
       <li>Read each customer’s description for clues about their purse and their eye for copper.</li>
     </ol>
     <button class="primary" id="openBtn" type="button">Open the shop</button>
   </section>
 
-  <!-- Offering -->
+  <!-- Step 1: offer -->
   <section class="panel" id="offerPanel" hidden>
     <div class="customer">
       <span id="custPortrait"></span>
@@ -224,25 +247,48 @@
     </div>
     <div class="seller-row">
       <div><span id="sellerPortrait"></span><div class="seller-tag">You</div></div>
-      <svg id="ingotArt" width="96" height="64" viewBox="0 0 96 64" aria-hidden="true"></svg>
       <div>
-        <div class="grade" id="gradeName"></div>
-        <div class="fair" id="fairPrice"></div>
-        <div class="secret">Only you can see this.</div>
+        <div class="stat-label">Your stock (only you can see this)</div>
+        <div class="stock" id="stockList"></div>
       </div>
     </div>
-    <div class="price-box">
+    <div class="section-label">Grade you claim to be selling</div>
+    <div class="grade-pick" id="gradePick" role="group" aria-label="Claimed grade"></div>
+    <div class="section-label">Your asking price</div>
+    <div class="price-box" style="border-top:none;padding-top:0">
       <div class="price-display"><span id="priceShow">10</span><small>shekels of silver</small></div>
       <div class="price-controls">
         <button class="step-btn" id="minusBtn" type="button" aria-label="Lower price">−</button>
-        <input type="range" id="priceSlider" min="1" max="25" step="1" value="10" aria-label="Price in shekels">
+        <input type="range" id="priceSlider" min="1" max="25" step="1" value="10" aria-label="Asking price in shekels">
         <button class="step-btn" id="plusBtn" type="button" aria-label="Raise price">+</button>
       </div>
       <button class="primary" id="offerBtn" type="button">Make offer</button>
     </div>
   </section>
 
-  <!-- Reaction -->
+  <!-- Step 2/3: customer's response -->
+  <section class="panel" id="responsePanel" hidden>
+    <div class="reaction-head">
+      <span id="respPortrait"></span>
+      <div class="outcome" id="respTitle"></div>
+    </div>
+    <p id="respText"></p>
+    <div id="respAccepted"><button class="primary" id="toDeliverBtn" type="button">Choose the ingot to hand over</button></div>
+    <div id="respCounter" class="two-buttons">
+      <button class="primary" id="acceptCounterBtn" type="button">Accept</button>
+      <button class="secondary" id="refuseBtn" type="button">Refuse</button>
+    </div>
+    <div id="respWalkout"><button class="primary" id="walkNextBtn" type="button">Next customer</button></div>
+  </section>
+
+  <!-- Step 4: delivery -->
+  <section class="panel" id="deliverPanel" hidden>
+    <h2>Which ingot goes in the sack?</h2>
+    <div class="deal" id="dealText"></div>
+    <div class="deliver-list" id="deliverList"></div>
+  </section>
+
+  <!-- Step 5: inspection result -->
   <section class="panel" id="reactionPanel" hidden>
     <div class="reaction-head">
       <span id="reactPortrait"></span>
@@ -290,17 +336,20 @@
 // ===== Game settings: change these numbers to tune the game =====
 const SETTINGS = {
   startReputation: 60,
-  limitBase: 4,             // customer limit = base + reputation × trustFactor + wealth + luck
-  trustFactor: 0.12,
-  luckRange: 1,             // small hidden luck: a whole number from −1 to +1
-  // Chance a customer notices an overcharge, by how well they know copper (hidden):
-  // 0 = can't tell copper from rock, 1 = a little, 2 = knows it well, 3 = expert
+  // Most a customer will pay = claimed fair price × (base + reputation × perRep) + wealth + luck
+  payBase: 0.7,
+  payPerRep: 0.005,
+  luckRange: 1,             // hidden luck: −1 to +1
+  insultRatio: 1.5,         // asking more than 1.5 × their max → they walk out
+  counterRatio: 0.9,        // their counter-offer = 90% of their max
+  // Chance to notice a 1-grade swap, by how well they know copper (hidden 0–3)
   noticeChance: [0.10, 0.40, 0.75, 1.00],
-  blatantBonus: 0.25,       // extra chance to notice if price is over 1.5 × fair
-  fairSaleBonus: 8,         // reputation gained for a fair sale
-  dropPerShekel: 3,         // reputation lost per shekel above fair
+  noticePerExtraGrade: 0.15,
+  happyBonus: 8,            // reputation gained when a customer is satisfied
+  dropPerShekel: 3,         // reputation lost per shekel paid above the delivered ingot’s fair price
+  minDrop: 3,
   maxDrop: 30,
-  returnRatio: 1.5,         // bought above 1.5 × fair price → returned
+  returnRatio: 1.5,         // noticed + paid over 1.5 × delivered fair price → returned
   minPrice: 1,
   maxPrice: 25
 };
@@ -374,10 +423,10 @@ const NANNI = {
 const EA_NASIR = { skin: "#b07443", hair: "#20140c", cloth: "#7a2e2a", bg: "#24447a", beard: "long", head: "cap", accent: "#d4a017", ingot: true };
 
 const RATINGS = [
-  { min: 42, name: "Merchant Prince of Ur" },
-  { min: 35, name: "Shrewd Dealer" },
-  { min: 28, name: "Honest Trader" },
-  { min: 20, name: "Struggling Merchant" },
+  { min: 40, name: "Merchant Prince of Ur" },
+  { min: 33, name: "Shrewd Dealer" },
+  { min: 25, name: "Honest Trader" },
+  { min: 15, name: "Struggling Merchant" },
   { min: 0,  name: "Literally Ea-nasir" }
 ];
 
@@ -399,77 +448,87 @@ function shuffle(list) {
   return a;
 }
 
+
 // ===== Game state =====
-let state = "instructions";   // instructions | offering | reaction | complaint | result
-let round;                    // { customers, index, silver, reputation, pendingComplaint, lastOutcome }
+// instructions | offering | response | delivering | reaction | complaint | result
+let state = "instructions";
+let round;
+let deal;                     // the current customer's negotiation: { claim, ask, response, price }
 
 function newRound() {
   const people = shuffle(CUSTOMER_POOL).slice(0, 4).concat(NANNI);
-  const ingots = shuffle(GRADES);
-  const customers = people.map((person, i) => ({
+  const customers = people.map((person) => ({
     name: person.name,
+    first: person.name.split(" ")[0],
     person,
     visit: person.visits[Math.floor(random() * person.visits.length)],
-    grade: ingots[i],
     luck: Math.floor(random() * (SETTINGS.luckRange * 2 + 1)) - SETTINGS.luckRange,
     noticeRoll: random()          // rolled in advance so ?seed games repeat exactly
   }));
-  round = { customers, index: 0, silver: 0, reputation: SETTINGS.startReputation, pendingComplaint: null };
+  round = {
+    customers, index: 0, silver: 0, reputation: SETTINGS.startReputation,
+    stock: [0, 1, 2, 3, 4],       // grade numbers: 0 = Fine … 4 = Mostly rock
+    pendingComplaint: null
+  };
 }
 
 function current() { return round.customers[round.index]; }
-
-function customerLimit(c) {
-  const raw = Math.round(SETTINGS.limitBase + round.reputation * SETTINGS.trustFactor + c.visit.wealth + c.luck);
-  return Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, raw));
-}
-
+function clampRep(r) { return Math.max(0, Math.min(100, r)); }
+function clampPrice(p) { return Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, p)); }
 function ratingFor(silver) { return RATINGS.find(r => silver >= r.min).name; }
 
-// ===== The core rule: what happens to one offer =====
-function resolveOffer(price) {
-  const c = current();
-  const fair = c.grade.fair;
-  const limit = customerLimit(c);
-  const overBy = price - fair;
-  const drop = Math.min(SETTINGS.maxDrop, SETTINGS.dropPerShekel * Math.max(0, overBy));
-
-  if (price > limit) return { kind: "walkout", silver: 0, rep: 0 };
-  if (price <= fair) return { kind: "fair", silver: price, rep: +SETTINGS.fairSaleBonus };
-  // Overcharged: do they notice? It depends on how well they know copper.
-  const blatant = price > fair * SETTINGS.returnRatio;
-  const chance = Math.min(1, SETTINGS.noticeChance[c.visit.knows] + (blatant ? SETTINGS.blatantBonus : 0));
-  if (c.noticeRoll >= chance) return { kind: "fooled", silver: price, rep: +SETTINGS.fairSaleBonus };
-  if (blatant) return { kind: "returned", silver: 0, rep: -drop };
-  return { kind: "overcharged", silver: price, rep: -drop };
+// ===== The rules =====
+function maxPay(c, claim) {
+  const mult = SETTINGS.payBase + round.reputation * SETTINGS.payPerRep;
+  return clampPrice(Math.round(GRADES[claim].fair * mult + c.visit.wealth + c.luck));
 }
 
-function clampRep(r) { return Math.max(0, Math.min(100, r)); }
+function customerResponse(c, claim, ask) {
+  const max = maxPay(c, claim);
+  if (ask <= max) return { kind: "accept", price: ask };
+  if (ask <= Math.ceil(max * SETTINGS.insultRatio)) {
+    return { kind: "counter", price: Math.max(SETTINGS.minPrice, Math.round(max * SETTINGS.counterRatio)) };
+  }
+  return { kind: "walkout", price: 0 };
+}
+
+function inspect(c, claim, delivered, price) {
+  const steps = delivered - claim;                     // positive = worse than promised
+  if (steps <= 0) return { kind: "happy", silver: price, rep: SETTINGS.happyBonus, returned: false };
+  const chance = Math.min(1, SETTINGS.noticeChance[c.visit.knows] + SETTINGS.noticePerExtraGrade * (steps - 1));
+  if (c.noticeRoll >= chance) return { kind: "fooled", silver: price, rep: SETTINGS.happyBonus, returned: false };
+  const realFair = GRADES[delivered].fair;
+  const drop = Math.min(SETTINGS.maxDrop, Math.max(SETTINGS.minDrop, SETTINGS.dropPerShekel * (price - realFair)));
+  if (price > realFair * SETTINGS.returnRatio) return { kind: "returned", silver: 0, rep: -drop, returned: true };
+  return { kind: "complained", silver: price, rep: -drop, returned: false };
+}
 
 // ===== Complaint wording (written for this game) =====
-function complaintFor(c, price, kind) {
-  const g = c.grade.name.toLowerCase();
-  if (kind === "returned") {
-    if (c.name === "Nanni") {
-      return `You took ${price} shekels for “${g}” copper. I am sending it back, and I expect my silver. My messenger crossed dangerous country to reach you, and you treated him with contempt. I will not be dealt with like this again.`;
-    }
-    return `I paid you ${price} shekels for this lump of “${g}” copper. I am returning it. Send my silver back with my servant, and do not insult him this time.`;
-  }
+function complaintFor(c, claim, delivered, price, kind) {
+  const promised = GRADES[claim].name.toLowerCase();
+  const got = GRADES[delivered].name.toLowerCase();
   if (c.name === "Nanni") {
-    return `${price} shekels for “${g}” copper? I asked for good ingots and you sent me this. Who do you think you are, to treat a customer so carelessly?`;
+    return kind === "returned"
+      ? `You promised me “${promised}” copper and put “${got}” in my sack, for ${price} shekels! I am sending it back and I expect every shekel returned. My messenger crossed dangerous country to reach you, and this is how you treat me?`
+      : `I paid ${price} shekels for “${promised}” copper and received “${got}.” Who do you think you are, to treat a customer so carelessly? I will remember this.`;
   }
-  return `You charged me ${price} shekels for “${g}” copper that is worth less than that. I am telling everyone at the market what kind of merchant you are.`;
+  return kind === "returned"
+    ? `You swore this was “${promised}” copper. It is “${got},” and I paid ${price} shekels for it! I am returning it. Send my silver back with my servant, and do not insult him this time.`
+    : `I asked for “${promised}” copper and you gave me “${got}.” I will keep it, since I need it, but I am telling everyone at the market what kind of merchant you are.`;
 }
 
 // ===== Screens =====
 const $ = (id) => document.getElementById(id);
-const panels = ["instructionsPanel", "offerPanel", "reactionPanel", "complaintPanel", "resultPanel"];
+const panels = ["instructionsPanel", "offerPanel", "responsePanel", "deliverPanel", "reactionPanel", "complaintPanel", "resultPanel"];
+let lastScreenChange = -Infinity;
 
-let showPanel = function (id, focusId) {
+function showPanel(id, focusId) {
+  lastScreenChange = performance.now();
   for (const p of panels) $(p).hidden = (p !== id);
   $("stats").hidden = (id === "instructionsPanel");
   if (focusId) $(focusId).focus({ preventScroll: true });
-};
+  window.scrollTo({ top: 0 });
+}
 
 function updateStats() {
   $("custNum").textContent = `${Math.min(round.index + 1, 5)} of 5`;
@@ -531,8 +590,10 @@ function portrait(look, mood = "neutral", size = 88) {
     `<defs><clipPath id="${id}"><circle cx="50" cy="55" r="50"/></clipPath></defs><g clip-path="url(#${id})">${g}</g></svg>`;
 }
 
-function drawIngot(grade) {
-  // A flat copper ingot; lower grades get grey lumps of rock
+
+function ingotSvg(g, w = 96) {
+  const grade = GRADES[g];
+  const h = Math.round(w * 2 / 3);
   let svg = `<path d="M10 14 Q48 4 86 14 L80 52 Q48 60 16 52 Z" fill="${grade.color}" stroke="#4a2e1a" stroke-width="2"/>`;
   svg += `<path d="M18 18 Q48 11 76 18" fill="none" stroke="rgba(255,230,190,0.5)" stroke-width="3"/>`;
   const spots = [[30,30],[60,38],[44,44],[70,24],[24,42],[52,26],[38,22],[64,48]];
@@ -540,15 +601,22 @@ function drawIngot(grade) {
     const [x, y] = spots[i];
     svg += `<ellipse cx="${x}" cy="${y}" rx="${5 + (i % 3)}" ry="${4 + (i % 2)}" fill="#8d877d" stroke="#5c564f" stroke-width="1"/>`;
   }
-  $("ingotArt").innerHTML = svg;
+  return `<svg width="${w}" height="${h}" viewBox="0 0 96 64" aria-hidden="true">${svg}</svg>`;
 }
 
 function setPrice(p) {
-  const price = Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, p));
+  const price = clampPrice(p);
   $("priceSlider").value = price;
   $("priceShow").textContent = price;
 }
 
+function setClaim(g) {
+  deal.claim = g;
+  for (const b of $("gradePick").children) b.setAttribute("aria-pressed", String(Number(b.dataset.g) === g));
+  setPrice(GRADES[g].fair);
+}
+
+// --- Step 1: a customer arrives ---
 function showCustomer() {
   const c = current();
   state = "offering";
@@ -557,45 +625,128 @@ function showCustomer() {
   $("custAbout").textContent = c.visit.text;
   $("custPortrait").innerHTML = portrait(c.person.look, "neutral", 92);
   $("sellerPortrait").innerHTML = portrait(EA_NASIR, "sly", 60);
-  $("gradeName").textContent = c.grade.name;
-  $("fairPrice").textContent = `Fair price: ${c.grade.fair} shekels`;
-  drawIngot(c.grade);
-  setPrice(c.grade.fair);
+  round.stock.sort((a, b) => a - b);
+  $("stockList").innerHTML = round.stock.map(g => `<span class="chip">${ingotSvg(g, 36)}${GRADES[g].name}</span>`).join("");
+  $("gradePick").innerHTML = GRADES.map((gr, g) =>
+    `<button type="button" data-g="${g}" aria-pressed="false">${gr.name}<small>fair ${gr.fair}</small></button>`).join("");
+  deal = { claim: 0, ask: 0, response: null, price: 0 };
+  setClaim(round.stock[0]);                                   // default: claim your best ingot
   showPanel("offerPanel", "priceSlider");
 }
 
 function makeOffer() {
-  if (state !== "offering") return;            // only one offer per customer
+  if (state !== "offering") return;                          // one offer per customer
+  state = "response";
+  const c = current();
+  deal.ask = Number($("priceSlider").value);
+  deal.response = customerResponse(c, deal.claim, deal.ask);
+  const claimName = GRADES[deal.claim].name.toLowerCase();
+  const r = deal.response;
+  $("respAccepted").hidden = r.kind !== "accept";
+  $("respCounter").hidden = r.kind !== "counter";
+  $("respWalkout").hidden = r.kind !== "walkout";
+  if (r.kind === "accept") {
+    deal.price = r.price;
+    $("respTitle").textContent = "Deal!";
+    $("respTitle").className = "outcome good";
+    $("respText").textContent = `${c.first} agrees to pay ${r.price} shekels for your “${claimName}” copper.`;
+    $("respPortrait").innerHTML = portrait(c.person.look, "happy", 72);
+    showPanel("responsePanel", "toDeliverBtn");
+  } else if (r.kind === "counter") {
+    $("respTitle").textContent = "A counter-offer";
+    $("respTitle").className = "outcome";
+    $("respText").textContent = `${c.first} won’t pay ${deal.ask} shekels for “${claimName}” copper, but offers ${r.price}. This is their only offer.`;
+    $("acceptCounterBtn").textContent = `Accept ${r.price}`;
+    $("respPortrait").innerHTML = portrait(c.person.look, "suspicious", 72);
+    showPanel("responsePanel");
+  } else {
+    $("respTitle").textContent = "Insulted!";
+    $("respTitle").className = "outcome bad";
+    $("respText").textContent = `${deal.ask} shekels for “${claimName}” copper? ${c.first} storms out without another word.`;
+    $("respPortrait").innerHTML = portrait(c.person.look, "angry", 72);
+    $("walkNextBtn").textContent = round.index === 4 ? "Close the shop" : "Next customer";
+    showPanel("responsePanel", "walkNextBtn");
+  }
+}
+
+function acceptCounter() {
+  if (state !== "response" || deal.response.kind !== "counter") return;
+  deal.price = deal.response.price;
+  showDelivery();
+}
+
+function toDelivery() {
+  if (state !== "response" || deal.response.kind !== "accept") return;
+  showDelivery();
+}
+
+function refuseCounter() {
+  if (state !== "response" || deal.response.kind !== "counter") return;
   state = "reaction";
   const c = current();
-  const price = Number($("priceSlider").value);
-  const result = resolveOffer(price);
+  showReaction(c, "No deal", "bad", `You refuse ${deal.response.price} shekels. ${c.first} shrugs and leaves.`, ["Silver: +0"], "annoyed");
+}
+
+function walkoutNext() {
+  if (state !== "response" || deal.response.kind !== "walkout") return;
+  state = "reaction";
+  round.pendingComplaint = null;
+  nextCustomer();
+}
+
+// --- Step 4: choose the ingot ---
+function showDelivery() {
+  state = "delivering";
+  const c = current();
+  $("dealText").innerHTML = `You promised <strong>${GRADES[deal.claim].name}</strong> to ${c.first} for <strong>${deal.price} shekels</strong>.`;
+  $("deliverList").innerHTML = round.stock.map(g => {
+    const steps = g - deal.claim;
+    const tag = steps === 0 ? `<span class="tag same">as promised</span>`
+      : steps > 0 ? `<span class="tag worse">${steps} grade${steps > 1 ? "s" : ""} worse than promised</span>`
+      : `<span class="tag">better than promised</span>`;
+    return `<button type="button" data-g="${g}">${ingotSvg(g, 54)}<span><strong>${GRADES[g].name}</strong> (fair ${GRADES[g].fair})<br>${tag}</span></button>`;
+  }).join("");
+  showPanel("deliverPanel", null);
+  const first = $("deliverList").querySelector("button");
+  if (first) first.focus({ preventScroll: true });
+}
+
+function deliver(g) {
+  if (state !== "delivering" || !round.stock.includes(g)) return;   // one delivery only
+  state = "reaction";
+  const c = current();
+  round.stock = round.stock.filter(x => x !== g);
+  const result = inspect(c, deal.claim, g, deal.price);
+  if (result.returned) round.stock.push(g);
   const repBefore = round.reputation;
   round.silver += result.silver;
   round.reputation = clampRep(round.reputation + result.rep);
   const repChange = round.reputation - repBefore;
-  round.pendingComplaint = (result.kind === "returned" || result.kind === "overcharged")
-    ? { from: c.name, text: complaintFor(c, price, result.kind), repChange }
+  round.pendingComplaint = (result.kind === "returned" || result.kind === "complained")
+    ? { from: c.name, text: complaintFor(c, deal.claim, g, deal.price, result.kind), repChange }
     : null;
 
-  const first = c.name.split(" ")[0];
-  const titles = {
-    fair: ["Sold!", "good", `${first} pays ${price} shekels and leaves happy.`],
-    fooled: ["Sold!", "good", `${first} pays ${price} shekels and leaves happy, none the wiser.`],
-    overcharged: ["Sold!", "good", `${first} pays ${price} shekels… and frowns at the ingot on the way out.`],
-    returned: ["Sold… then returned!", "bad", `${first} paid ${price} shekels, took one look at the ingot, and came straight back.`],
-    walkout: ["They walked out", "bad", `${first} won’t pay ${price} shekels and leaves without buying.`]
+  const got = GRADES[g].name.toLowerCase();
+  const views = {
+    happy: ["Sold!", "good", `${c.first} looks over the ingot, pays ${deal.price} shekels, and leaves happy.`, "happy"],
+    fooled: ["Sold!", "good", `${c.first} pays ${deal.price} shekels for what is really “${got}” copper, and leaves happy, none the wiser.`, "happy"],
+    complained: ["Sold… but they noticed", "bad", `${c.first} spots that it’s only “${got}” copper. They keep it, grumbling, but a complaint tablet will follow.`, "suspicious"],
+    returned: ["Returned!", "bad", `${c.first} spots that it’s only “${got}” copper, which is nowhere near worth ${deal.price} shekels. They hand it back and demand their silver.`, "angry"]
   };
-  const [title, tone, text] = titles[result.kind];
+  const [title, tone, text, face] = views[result.kind];
+  const changes = [`Silver: +${result.silver}`];
+  if (repChange > 0) changes.push(`Reputation: +${repChange}`);
+  if (result.returned) changes.push(`The ${got} ingot is back on your shelf.`);
+  if (round.pendingComplaint) changes.push("A complaint tablet is on its way…");
+  showReaction(c, title, tone, text, changes, face);
+}
+
+function showReaction(c, title, tone, text, changes, face) {
   $("outcomeTitle").textContent = title;
   $("outcomeTitle").className = "outcome " + tone;
   $("outcomeText").textContent = text;
-  const changes = [`Silver: +${result.silver}`];
-  if (result.kind === "fair" || result.kind === "fooled") changes.push(`Reputation: +${repChange}`);
-  const faces = { fair: "happy", fooled: "happy", overcharged: "suspicious", returned: "angry", walkout: "annoyed" };
-  $("reactPortrait").innerHTML = portrait(c.person.look, faces[result.kind], 72);
-  if (round.pendingComplaint) changes.push("A complaint tablet is on its way…");
   $("outcomeChanges").innerHTML = changes.map(t => `<li>${t}</li>`).join("");
+  $("reactPortrait").innerHTML = portrait(c.person.look, face, 72);
   $("nextBtn").textContent = round.index === 4 ? "Close the shop" : "Next customer";
   updateStats();
   showPanel("reactionPanel", "nextBtn");
@@ -603,8 +754,7 @@ function makeOffer() {
 
 function afterReaction() {
   if (state !== "reaction") return;
-  if (round.index === 4) return showResult();
-  if (round.pendingComplaint) {
+  if (round.pendingComplaint && round.index < 4) {
     state = "complaint";
     const pc = round.pendingComplaint;
     $("complaintFrom").textContent = `To Ea-nasir, from ${pc.from}:`;
@@ -613,13 +763,17 @@ function afterReaction() {
     showPanel("complaintPanel", "continueBtn");
     return;
   }
-  round.index += 1;
-  showCustomer();
+  nextCustomer();
 }
 
 function afterComplaint() {
   if (state !== "complaint") return;
   round.pendingComplaint = null;
+  nextCustomer();
+}
+
+function nextCustomer() {
+  if (round.index === 4) return showResult();
   round.index += 1;
   showCustomer();
 }
@@ -630,17 +784,14 @@ function showResult() {
   $("resultPortrait").innerHTML = portrait(EA_NASIR, mine === "Literally Ea-nasir" ? "annoyed" : "sly", 84);
   $("ratingName").textContent = mine;
   $("ratingLadder").innerHTML = RATINGS.map((r, i) => {
-    const top = i === 0 ? null : RATINGS[i - 1].min - 1;
-    const range = i === 0 ? `${r.min}+ shekels`
-      : r.min === 0 ? `under ${RATINGS[i - 1].min}`
-      : `${r.min}–${top}`;
+    const range = i === 0 ? `${r.min}+ shekels` : r.min === 0 ? `under ${RATINGS[i - 1].min}` : `${r.min}–${RATINGS[i - 1].min - 1}`;
     const isMine = r.name === mine;
     return `<li class="${isMine ? "you" : ""}"${isMine ? ' aria-current="true"' : ""}>` +
-      `<span class="marker">${isMine ? "▶" : ""}</span><span>${r.name}${isMine ? " (you)" : ""}</span>` +
-      `<span class="range">${range}</span></li>`;
+      `<span class="marker">${isMine ? "▶" : ""}</span><span>${r.name}${isMine ? " (you)" : ""}</span><span class="range">${range}</span></li>`;
   }).join("");
-  $("resultSummary").textContent =
-    `You made ${round.silver} shekels of silver. Final reputation: ${round.reputation}.`;
+  const unsold = round.stock.length;
+  $("resultSummary").textContent = `You made ${round.silver} shekels of silver. Final reputation: ${round.reputation}.` +
+    (unsold ? ` ${unsold} ingot${unsold > 1 ? "s" : ""} left unsold.` : "");
   const pc = round.pendingComplaint;
   $("lastTablet").hidden = !pc;
   if (pc) {
@@ -658,30 +809,44 @@ function startShop() {
 }
 
 // ===== Controls =====
+// Buttons ignore clicks for a moment after the screen changes, so a double-click or
+// double-tap can't press the button that appears in the same spot on the next screen.
+const guard = (fn) => (e) => { if (performance.now() - lastScreenChange >= 300) fn(e); };
 $("introPortrait").innerHTML = portrait(EA_NASIR, "sly", 92);
-$("openBtn").addEventListener("click", startShop);
-$("againBtn").addEventListener("click", startShop);
-$("offerBtn").addEventListener("click", makeOffer);
-$("nextBtn").addEventListener("click", afterReaction);
-$("continueBtn").addEventListener("click", afterComplaint);
+$("openBtn").addEventListener("click", guard(startShop));
+$("againBtn").addEventListener("click", guard(startShop));
+$("offerBtn").addEventListener("click", guard(makeOffer));
+$("toDeliverBtn").addEventListener("click", guard(toDelivery));
+$("acceptCounterBtn").addEventListener("click", guard(acceptCounter));
+$("refuseBtn").addEventListener("click", guard(refuseCounter));
+$("walkNextBtn").addEventListener("click", guard(walkoutNext));
+$("nextBtn").addEventListener("click", guard(afterReaction));
+$("continueBtn").addEventListener("click", guard(afterComplaint));
 $("minusBtn").addEventListener("click", () => setPrice(Number($("priceSlider").value) - 1));
 $("plusBtn").addEventListener("click", () => setPrice(Number($("priceSlider").value) + 1));
 $("priceSlider").addEventListener("input", () => setPrice(Number($("priceSlider").value)));
+$("gradePick").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (b && state === "offering") setClaim(Number(b.dataset.g));
+});
+$("deliverList").addEventListener("click", guard((e) => {
+  const b = e.target.closest("button");
+  if (b) deliver(Number(b.dataset.g));
+}));
 
-// Enter = the main button on screen. The game handles Enter itself (and blocks the
-// browser's own button press), so one press can never count twice. A short pause after
-// each screen change also stops a held or bouncing key from skipping ahead.
-let lastScreenChange = 0;
-const _showPanel = showPanel;
-showPanel = function (id, focusId) { lastScreenChange = performance.now(); _showPanel(id, focusId); };
+// Enter = the main button. The game handles Enter itself (blocking the browser's own button
+// press) so one press never counts twice. Choices with two or more options (accept or refuse,
+// which ingot) need a click or tap. A short pause after each screen change stops key bounce.
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   const t = e.target;
-  if (t === $("minusBtn") || t === $("plusBtn")) return;   // let − / + work normally
+  if (t === $("minusBtn") || t === $("plusBtn") || (t.closest && t.closest("#gradePick, #deliverList, #respCounter"))) return;
   e.preventDefault();
   if (e.repeat || performance.now() - lastScreenChange < 250) return;
   if (state === "instructions" || state === "result") startShop();
   else if (state === "offering") makeOffer();
+  else if (state === "response" && deal.response.kind === "accept") toDelivery();
+  else if (state === "response" && deal.response.kind === "walkout") walkoutNext();
   else if (state === "reaction") afterReaction();
   else if (state === "complaint") afterComplaint();
 });

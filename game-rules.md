@@ -1,134 +1,101 @@
-# Game rules: Ea-nasir's Copper Co. (first version)
+# Game rules: Ea-nasir's Copper Co. (version 3: negotiation)
 
 ## Goal (shown to the player)
-Make as much silver as you can from five copper ingots.
+Make as much silver as you can. Name your copper, haggle over the price, and decide which ingot actually goes in the customer's sack.
 
 ## How to play (shown on the instructions card)
-1. Look at your ingot. You know its true quality; your customer doesn't.
-2. Pick a price from 1 to 25 shekels and press **Make offer**. You get one offer per customer.
-3. If the price is within what they'll pay, they buy. Too high and they walk out.
-4. Charge more than the fair price and a complaint tablet follows: your reputation drops and later customers pay less.
-5. Charge more than 50% above the fair price and the customer returns the ingot. You keep no silver.
+1. You have five ingots in stock, one of each grade. Five customers will visit.
+2. Tell the customer which grade you're selling and name your price.
+3. They accept, make one counter-offer, or walk out if your price insults them. If they counter, you accept or refuse.
+4. Once a price is agreed, choose which ingot from your stock to hand over. It doesn't have to be the one you promised.
+5. The customer inspects it. Someone who knows copper may spot the swap. Read each description for clues about their purse and their eye for copper.
 
-## Ingots
-- Each round has exactly five ingots, one of each grade, in a shuffled order.
-
-| Grade | Fair price |
-| --- | --- |
-| Fine copper | 10 |
-| Decent | 8 |
-| Lumpy | 6 |
-| Poor | 4 |
-| Mostly rock | 2 |
-
-The player sees the grade and fair price. The customer does not.
+## Stock
+- Starts with five ingots: Fine copper (fair 10), Decent (8), Lumpy (6), Poor (4), Mostly rock (2).
+- Each sale removes the ingot you hand over. A returned ingot goes back into stock.
+- Each customer buys at most one ingot, so you never run out; unsold ingots are listed on the result screen.
 
 ## Customers
-- Customers 1–4 are picked from six invented characters. Customer 5 is always **Nanni**.
-- Each character has **three possible visits**. A visit is chosen at random and sets two hidden numbers:
-  - **Wealth** (−2 to +2): how much silver they carry.
-  - **Knows copper** (0 to 3): how likely they are to notice an overcharge.
-- Neither number is shown. The **description** hints at both, through the customer's situation, the copper's intended use, and who they're buying it for. Examples:
-  - Kuri the goat trader, rich and clueless: "Just sold his whole herd to the palace kitchens… He's never owned anything metal before."
-  - Ubar-Sin the scribe, expert eyes waiting: "Buying a gift for his father, a retired coppersmith who will inspect every inch of it."
-- Nanni always knows copper well (2 or 3).
+Unchanged from version 2: four of six invented characters plus Nanni. Each has three possible visits, setting hidden **wealth** (−2 to +2) and **knows copper** (0 to 3). The description hints at both.
 
-**Limit = 4 + (reputation × 0.12) + wealth + luck**, where luck is a hidden whole number from −1 to +1. The limit is rounded and kept between 1 and 25. Quality doesn't affect the limit; the customer can't see it.
+## Step 1: Ea-nasir's offer
+- Choose a **claimed grade** (any of the five, even one you don't have in stock) and an **asking price** from 1 to 25.
+- The price starts at the claimed grade's fair price.
 
-## Noticing an overcharge
-| Knows copper | Chance to notice | Chance if price is over 1.5 × fair |
-| --- | --- | --- |
-| 0 – can't tell copper from rock | 10% | 35% |
-| 1 – knows a little | 40% | 65% |
-| 2 – knows it well | 75% | 100% |
-| 3 – expert (or someone expert will check) | 100% | 100% |
+## Step 2: the customer responds
+The customer believes your claim. Their hidden **most they'll pay**:
 
-The roll is made in advance for each customer, so `?seed=` games repeat exactly.
+**Max = fair price of the claimed grade × (0.7 + reputation × 0.005) + wealth + luck**
 
-## The offer: five possible outcomes
-Checked in this order:
+(luck is −1 to +1; the result is rounded and kept between 1 and 25). At the starting reputation of 60 the multiplier is 1.0; at 100 it's 1.2; at 0 it's 0.7.
 
-| Outcome | When | Silver | Reputation |
-| --- | --- | --- | --- |
-| **Walkout** | price > customer's limit | +0 | no change |
-| **Fair sale** | price at or below fair | +price | +8 |
-| **Fooled** | overcharged, but they didn't notice | +price | +8 (they think it was fair) |
-| **Returned** | noticed, and price > 1.5 × fair | +0 | drops by 3 × (price − fair), at most 30 |
-| **Overcharged** | noticed, price above fair but no more than 1.5 × fair | +price | drops by 3 × (price − fair), at most 30 |
-
-Returned and overcharged sales send a complaint tablet before the next customer. A fooled customer sends nothing.
-
-- Make offer works once per customer. Pressing it again does nothing.
-- Reputation starts at 60 and stays between 0 and 100.
-
-**Why this is game theory:** each sale is an ultimatum (one offer, take it or leave it) under hidden information on both sides. You know the copper's quality; the customer knows their own purse and eye for metal; each side only has clues. Overcharging someone who notices costs reputation, and lower reputation lowers every later customer's limit. Simulated averages over 20,000 rounds:
-- Always charge fair: **about 30** silver.
-- Always charge 1.5 × fair: **about 23**.
-- Charge as much as each customer can afford: **about 18**.
-- Read the descriptions; overcharge only those unlikely to notice: **about 35**, sometimes over 50.
-
-## Screens (states)
-
-| State | What the player sees |
+| Asking price | Customer response |
 | --- | --- |
-| Instructions | Title, goal, how-to steps, **Open the shop** |
-| Offering | "Customer N of 5", customer portrait, name and description (with hidden hints), Ea-nasir's portrait, ingot grade and fair price, price control, silver, reputation, **Make offer** |
-| Reaction | Customer portrait with a matching expression; "Sold!", "Sold… then returned!", or "They walked out," the price, the silver change, **Next customer** |
-| Complaint | A clay tablet with the complaint and the reputation drop, **Continue** |
-| Result | Merchant rating, the full list of ratings with an arrow at the player’s, total silver, final reputation (plus any last complaint or return), **Open a new shop** |
+| At or below max | **Accepts** at your price |
+| Above max, but no more than 1.5 × max (rounded up) | **Counters** at 90% of max (rounded, at least 1) |
+| More than 1.5 × max | **Walks out**, insulted |
 
-## What happens when
+## Step 3: Ea-nasir responds to a counter
+**Accept** the counter (deal at their price) or **Refuse** (no sale; reputation unchanged).
 
-| Player does… | In state… | Result |
-| --- | --- | --- |
-| Opens the page | — | Instructions; nothing else happens |
-| Presses Open the shop | Instructions | Customer 1 of 5 appears |
-| Changes the price | Offering | Shown price changes; nothing else happens |
-| Presses Make offer | Offering | Reaction screen; silver and reputation update |
-| Presses Next customer after a fair sale or walkout | Reaction | Next customer, or Result after customer 5 |
-| Presses Next customer after an overcharge or return | Reaction | Complaint tablet (or Result, with the complaint shown, after customer 5) |
-| Presses Continue | Complaint | Next customer |
-| Presses Open a new shop | Result | Fresh round: silver 0, reputation 60, new shuffle, Customer 1 of 5 (no instructions) |
+## Step 4: delivery
+Choose which ingot from stock to hand over. The screen shows the grade you promised.
 
-## Merchant rating (result screen)
-Based on silver only. Final reputation is shown for interest.
+## Step 5: inspection
+- **Honest or better** (delivered grade is the one promised or higher): customer is happy. Reputation **+8**.
+- **Swapped for worse:** the customer may notice.
 
-The result screen lists all five ratings from best to worst, with an arrow (▶) and highlight on the player's rating.
+| Knows copper | Chance to notice a 1-grade swap |
+| --- | --- |
+| 0 – can't tell copper from rock | 10% |
+| 1 – knows a little | 40% |
+| 2 – knows it well | 75% |
+| 3 – expert (or an expert will check) | 100% |
 
+Each extra grade of difference adds **+15%**. (Promising Fine and delivering Mostly rock is a 4-grade swap.)
+
+| Swap result | Silver | Reputation | Tablet |
+| --- | --- | --- | --- |
+| Not noticed | keep price | +8 | none |
+| Noticed, price ≤ 1.5 × fair of the ingot delivered | keep price | drops by 3 × (price − delivered fair), at least 3, at most 30 | complaint |
+| Noticed, price > 1.5 × fair of the ingot delivered | +0, ingot returns to stock | same drop | complaint ("I'm returning this") |
+
+The notice roll is made in advance for each customer, so `?seed=` games repeat exactly.
+
+**Why this is game theory:** a two-move bargaining game (offer, counter, accept or refuse) layered on hidden information on both sides. You know the real quality; the customer knows their own purse and eye for copper. Your claim is a signal they can't verify until it's too late. Lying is a gamble whose odds you estimate from the description, and every caught lie lowers what later customers will pay. Simulated averages over 20,000 rounds:
+- Honest, fair prices: **about 27**
+- Honest, pushing prices: **about 28**
+- Always lie: **about 9**
+- Lie only to customers unlikely to notice: **about 31**, sometimes over 50
+
+## Merchant rating (silver only)
 | Total silver | Rating |
 | --- | --- |
-| 42 or more | Merchant Prince of Ur |
-| 35–41 | Shrewd Dealer |
-| 28–34 | Honest Trader |
-| 20–27 | Struggling Merchant |
-| under 20 | Literally Ea-nasir |
+| 40 or more | Merchant Prince of Ur |
+| 33–39 | Shrewd Dealer |
+| 25–32 | Honest Trader |
+| 15–24 | Struggling Merchant |
+| under 15 | Literally Ea-nasir |
 
-The result screen lists all five ratings from best to worst, with an arrow (▶) and highlight on the player's rating.
-
-## Reset between rounds
-- **Reset:** silver to 0, reputation to 60, ingot order, customers, any pending complaint.
-- **Kept:** nothing (no saved scores).
-
-## Controls
-- **Price:** a slider plus − and + buttons, from 1 to 25. It starts at the ingot's fair price.
-- **Laptop:** Enter = Make offer, Next customer, or Continue (whichever is showing). Arrow keys move the slider when it's selected.
-- **Phone:** tap the − / + buttons, the slider, and the large buttons.
-- Hidden test option: adding `?seed=1` to the address gives the same customers, ingots, and luck every time.
+The result screen lists all five with an arrow on the player's rating.
 
 ## Partner test cases
-Mark each one **Passed**, **Failed**, or **Not tested**.
-
 1. Open the game and wait. → Only the instructions show.
-2. Press Open the shop. → "Customer 1 of 5," silver 0, reputation 60.
-3. Offer 1 shekel. → Sold; silver rises by exactly 1; no complaint.
-4. Offer 25 shekels. → They walk out; silver and reputation unchanged.
-5. Overcharge a customer whose description says they're an expert (or that an expert will check). → Complaint tablet; reputation drops.
-6. Overcharge a clueless customer (for example, "can't tell copper from bronze") several times across rounds. → Usually "none the wiser" with no tablet; occasionally they notice.
-7. Sell any ingot at exactly its fair price. → No complaint; reputation rises by 8.
-8. Press Make offer twice quickly. → Only one offer counts.
-9. Finish all five customers. → Customer 5 is Nanni; the result shows a rating that matches the table, with the arrow on that rating in the full list.
-10. Press Open a new shop. → Silver 0, reputation 60, Customer 1 of 5.
-11. On a phone, set a price with − / + and make an offer. → Works without zooming or scrolling oddly.
+2. Claim the grade you'll deliver at its fair price, then deliver it. → Accepted (usually); no tablet; reputation +8.
+3. Ask 25 for "Mostly rock." → The customer walks out; nothing changes.
+4. Ask a little above what seems likely. → A counter-offer appears; Accept makes a deal at their price; Refuse ends with no sale.
+5. Promise Fine, deliver Mostly rock to an expert (for example, "a retired coppersmith will inspect it"). → Noticed; returned or complaint; reputation drops.
+6. Promise Decent, deliver Lumpy to a clueless customer. → Usually "none the wiser"; occasionally caught.
+7. Get an ingot returned. → It appears back in your stock for the next customer.
+8. Double-click Make offer, Accept, or an ingot. → Each counts only once, and the double-click never presses the button that appears next.
+9. Finish five customers. → Nanni is last; the rating matches the table with the arrow on it.
+10. Open a new shop. → Stock back to five, silver 0, reputation 60.
+
+## Controls
+- Claimed grade: five buttons. Price: slider plus − / + (1 to 25), starting at the claimed grade's fair price.
+- Enter presses the main button (Make offer, Choose the ingot, Next customer, Continue, Open the shop). Two-way choices (Accept or Refuse, which ingot) need a click or tap.
+- Buttons ignore clicks for 0.3 seconds after a screen changes, so a double-click can't skip a screen.
+- Hidden test option: `?seed=1` repeats the same customers, visits, luck, and notice rolls.
 
 ## Portraits
-Ea-nasir and every customer have simple drawn portraits in a style inspired by Mesopotamian statues (large eyes, joined brows, curled beards). No picture of Ea-nasir survives; all portraits are imagined. Customer expressions change after each offer: happy, suspicious, angry, or annoyed.
+Ea-nasir and every customer have simple drawn portraits inspired by Mesopotamian statues. No picture of Ea-nasir survives; all portraits are imagined. Customer expressions change with each response and inspection.
