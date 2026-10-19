@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ea-nasir’s Copper Co.</title>
+<style>
+  :root {
+    --page: #e7d3b6;
+    --clay: #d8b48c;
+    --clay-dark: #8a5a35;
+    --ink: #2b1b10;
+    --muted: #6a4c35;
+    --lapis: #24447a;
+    --copper: #b8692f;
+    --verdigris: #3f8a7c;
+    --danger: #a32f22;
+    --panel: #f3e4cc;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #1f1610;
+      --panel: #33251a;
+      --ink: #f4e6d0;
+      --muted: #cfb497;
+      --clay: #6e4c32;
+      --clay-dark: #c9a27a;
+      --lapis: #8fb0e8;
+      --danger: #f08070;
+      --verdigris: #74c2b2;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--page);
+    color: var(--ink);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 17px;
+    line-height: 1.5;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 14px calc(24px + env(safe-area-inset-bottom, 0px));
+  }
+  main { max-width: 560px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 14px; }
+  h1 {
+    margin: 0;
+    font-size: clamp(1.7rem, 6vw, 2.3rem);
+    letter-spacing: 0.02em;
+    color: var(--lapis);
+  }
+  .tagline { margin: 2px 0 0; color: var(--muted); font-style: italic; }
+
+  .stats {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1.4fr;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .stat {
+    background: var(--panel);
+    border: 2px solid var(--clay-dark);
+    border-radius: 6px;
+    padding: 6px 10px;
+  }
+  .stat-label { font-size: 0.8rem; color: var(--muted); }
+  .stat-value { font-size: 1.25rem; font-weight: bold; }
+  .rep-bar { height: 8px; background: var(--clay); border-radius: 4px; margin-top: 4px; overflow: hidden; }
+  .rep-fill { height: 100%; background: var(--verdigris); transition: width 0.4s; }
+
+  .panel {
+    background: var(--panel);
+    border: 2px solid var(--clay-dark);
+    border-radius: 8px;
+    padding: 18px 20px;
+  }
+  .panel[hidden], .stats[hidden] { display: none; }
+  h2 { margin: 0 0 6px; font-size: 1.4rem; color: var(--lapis); }
+  p { margin: 0 0 10px; }
+  ol { margin: 0 0 16px; padding-left: 1.3em; }
+  li { margin-bottom: 4px; }
+
+  .customer { margin-bottom: 12px; }
+  .customer-name { font-weight: bold; font-size: 1.15rem; }
+  .about { color: var(--muted); font-style: italic; margin-bottom: 8px; }
+  .hints {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 4px 12px;
+    margin: 0;
+    padding: 10px 12px;
+    background: rgba(138, 90, 53, 0.08);
+    border-left: 3px solid var(--copper);
+    border-radius: 0 6px 6px 0;
+  }
+  .hints dt { font-weight: bold; color: var(--copper); }
+  .hints dd { margin: 0; }
+
+  .ladder { list-style: none; padding: 0; margin: 4px 0 16px; }
+  .ladder li {
+    display: grid;
+    grid-template-columns: 2.2em 1fr auto;
+    align-items: center;
+    padding: 6px 8px;
+    border-bottom: 1px dashed var(--clay-dark);
+    color: var(--muted);
+  }
+  .ladder li:last-child { border-bottom: none; }
+  .ladder .marker { color: var(--copper); font-weight: bold; }
+  .ladder .range { font-size: 0.9rem; }
+  .ladder li.you {
+    color: var(--ink);
+    font-weight: bold;
+    background: rgba(184, 105, 47, 0.14);
+    border-radius: 6px;
+  }
+
+  .ingot-row { display: flex; align-items: center; gap: 14px; margin: 10px 0 14px; }
+  .ingot-row svg { flex: 0 0 auto; }
+  .grade { font-size: 1.2rem; font-weight: bold; }
+  .fair { color: var(--muted); }
+  .secret { font-size: 0.85rem; color: var(--muted); }
+
+  .price-box { border-top: 1px dashed var(--clay-dark); padding-top: 12px; }
+  .price-display { text-align: center; font-size: 2.4rem; font-weight: bold; color: var(--copper); line-height: 1.1; }
+  .price-display small { display: block; font-size: 0.9rem; font-weight: normal; color: var(--muted); }
+  .price-controls { display: flex; align-items: center; gap: 10px; margin: 8px 0 14px; }
+  .price-controls input[type=range] { flex: 1; accent-color: var(--copper); height: 32px; }
+  .step-btn {
+    width: 46px; height: 46px; flex: 0 0 46px;
+    font-size: 1.5rem; padding: 0;
+    background: var(--panel); color: var(--ink);
+    border: 2px solid var(--clay-dark);
+  }
+
+  button {
+    font: inherit;
+    border-radius: 6px;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+  .primary {
+    display: block;
+    width: 100%;
+    padding: 13px;
+    font-size: 1.15rem;
+    font-weight: bold;
+    background: var(--lapis);
+    color: #fdf6ea;
+    border: 2px solid var(--lapis);
+  }
+  @media (prefers-color-scheme: dark) { .primary { color: #10203d; } }
+  button:hover { filter: brightness(1.08); }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--copper); outline-offset: 3px; }
+
+  .outcome { font-size: 1.6rem; margin-bottom: 4px; }
+  .good { color: var(--verdigris); }
+  .bad { color: var(--danger); }
+  .changes { list-style: none; padding: 0; margin: 0 0 16px; }
+  .changes li { margin-bottom: 2px; }
+
+  /* The complaint tablet: the one bold element */
+  .tablet {
+    background:
+      radial-gradient(circle at 20% 15%, rgba(255,255,255,0.18), transparent 40%),
+      var(--clay);
+    color: #2b1b10;
+    border-radius: 18px 22px 16px 24px;
+    padding: 22px 22px 18px;
+    box-shadow: inset 0 0 0 3px rgba(90, 55, 30, 0.35), 0 6px 0 #7a4e2d;
+    margin-bottom: 16px;
+    transform: rotate(-0.6deg);
+  }
+  .tablet .wedges { letter-spacing: 0.3em; color: #6e4426; font-size: 0.9rem; margin-bottom: 6px; }
+  .tablet p { font-style: italic; }
+  .tablet .from { font-style: normal; font-weight: bold; }
+
+  .rating { font-size: 1.8rem; color: var(--copper); font-weight: bold; margin: 4px 0 8px; }
+  .footnote { font-size: 0.85rem; color: var(--muted); margin-top: 16px; text-align: center; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Ea-nasir’s Copper Co.</h1>
+    <p class="tagline">Ur, around 1750 BC. Quality not guaranteed.</p>
+  </header>
+
+  <div class="stats" id="stats" hidden>
+    <div class="stat"><div class="stat-label">Customer</div><div class="stat-value" id="custNum">1 of 5</div></div>
+    <div class="stat"><div class="stat-label">Silver</div><div class="stat-value" id="silver">0</div></div>
+    <div class="stat">
+      <div class="stat-label">Reputation</div>
+      <div class="stat-value" id="repNum">60</div>
+      <div class="rep-bar"><div class="rep-fill" id="repFill" style="width:60%"></div></div>
+    </div>
+  </div>
+
+  <!-- Instructions -->
+  <section class="panel" id="instructionsPanel">
+    <h2>Make as much silver as you can</h2>
+    <p>You have five copper ingots of… varying quality. Five customers are on their way.</p>
+    <ol>
+      <li>You know each ingot’s true quality. Your customer doesn’t.</li>
+      <li>Pick a price from 1 to 25 shekels and make one offer.</li>
+      <li>Too high for them, and they walk out. What they’ll pay depends on two things: how much silver they’re carrying, and how much they trust you. Read their description for clues.</li>
+      <li>Charge more than the fair price and a complaint tablet follows. Your reputation drops, and later customers will pay less.</li>
+      <li>Charge more than 50% above the fair price and they return the ingot. You keep nothing.</li>
+    </ol>
+    <button class="primary" id="openBtn" type="button">Open the shop</button>
+  </section>
+
+  <!-- Offering -->
+  <section class="panel" id="offerPanel" hidden>
+    <div class="customer">
+      <div class="customer-name" id="custName"></div>
+      <div class="about" id="custAbout"></div>
+      <dl class="hints">
+        <dt>Purse</dt><dd id="custPurse"></dd>
+        <dt>Trust</dt><dd id="custTrust"></dd>
+      </dl>
+    </div>
+    <div class="ingot-row">
+      <svg id="ingotArt" width="96" height="64" viewBox="0 0 96 64" aria-hidden="true"></svg>
+      <div>
+        <div class="grade" id="gradeName"></div>
+        <div class="fair" id="fairPrice"></div>
+        <div class="secret">Only you can see this.</div>
+      </div>
+    </div>
+    <div class="price-box">
+      <div class="price-display"><span id="priceShow">10</span><small>shekels of silver</small></div>
+      <div class="price-controls">
+        <button class="step-btn" id="minusBtn" type="button" aria-label="Lower price">−</button>
+        <input type="range" id="priceSlider" min="1" max="25" step="1" value="10" aria-label="Price in shekels">
+        <button class="step-btn" id="plusBtn" type="button" aria-label="Raise price">+</button>
+      </div>
+      <button class="primary" id="offerBtn" type="button">Make offer</button>
+    </div>
+  </section>
+
+  <!-- Reaction -->
+  <section class="panel" id="reactionPanel" hidden>
+    <div class="outcome" id="outcomeTitle"></div>
+    <p id="outcomeText"></p>
+    <ul class="changes" id="outcomeChanges"></ul>
+    <button class="primary" id="nextBtn" type="button">Next customer</button>
+  </section>
+
+  <!-- Complaint -->
+  <section class="panel" id="complaintPanel" hidden>
+    <div class="tablet">
+      <div class="wedges" aria-hidden="true">▾◂ ▾▾ ◂▾◂ ▾ ◂◂▾</div>
+      <p class="from" id="complaintFrom"></p>
+      <p id="complaintText"></p>
+    </div>
+    <p id="complaintEffect" class="bad"></p>
+    <button class="primary" id="continueBtn" type="button">Continue</button>
+  </section>
+
+  <!-- Result -->
+  <section class="panel" id="resultPanel" hidden>
+    <h2>The shop is closed</h2>
+    <div class="rating" id="ratingName"></div>
+    <p id="resultSummary"></p>
+    <ol class="ladder" id="ratingLadder" aria-label="All merchant ratings"></ol>
+    <div class="tablet" id="lastTablet" hidden>
+      <div class="wedges" aria-hidden="true">▾◂ ▾▾ ◂▾◂ ▾ ◂◂▾</div>
+      <p class="from" id="lastFrom"></p>
+      <p id="lastText"></p>
+    </div>
+    <button class="primary" id="againBtn" type="button">Open a new shop</button>
+  </section>
+
+  <p class="footnote">Ea-nasir and Nanni’s complaint are real history. Everything else here is invented for fun.</p>
+</main>
+
+<script>
+// ===== Game settings: change these numbers to tune the game =====
+const SETTINGS = {
+  startReputation: 60,
+  limitBase: 4,             // customer limit = base + reputation × trustFactor + luck
+  trustFactor: 0.12,
+  luckRange: 2,             // luck is a whole number from −2 to +2
+  fairSaleBonus: 8,         // reputation gained for a fair sale
+  dropPerShekel: 3,         // reputation lost per shekel above fair
+  maxDrop: 30,
+  returnRatio: 1.5,         // bought above 1.5 × fair price → returned
+  minPrice: 1,
+  maxPrice: 25
+};
+
+const GRADES = [
+  { name: "Fine copper", fair: 10, color: "#c8763a", lumps: 0 },
+  { name: "Decent",      fair: 8,  color: "#b46a36", lumps: 1 },
+  { name: "Lumpy",       fair: 6,  color: "#9a6038", lumps: 3 },
+  { name: "Poor",        fair: 4,  color: "#7f5a42", lumps: 5 },
+  { name: "Mostly rock", fair: 2,  color: "#7b746b", lumps: 8 }
+];
+
+// Each customer: who they are, and five purse hints.
+// purse[0] = luck −2 (short of silver) … purse[4] = luck +2 (lots of silver).
+const CUSTOMER_POOL = [
+  { name: "Ubar-Sin the scribe",
+    about: "Needs copper to make new styluses for the temple school.",
+    purse: ["Scribes are not paid much, and his sandals have holes in them.",
+            "He mentions that the temple has been paying him late.",
+            "He has the ordinary purse of a working scribe.",
+            "He just copied out a rich man’s will and was paid well for it.",
+            "A royal official has hired him, and he’s in a generous mood."] },
+  { name: "Shala the potter",
+    about: "Wants copper tools to carve patterns into her finest jars.",
+    purse: ["Her last kiln load cracked, and she’s counting every shekel.",
+            "Business at her stall has been slow this month.",
+            "Her stall does a steady, ordinary trade.",
+            "She just sold a whole set of wine jars to a tavern.",
+            "A palace order for a hundred jars has made her rich this season."] },
+  { name: "Ilsu the shipwright",
+    about: "Needs copper nails and fittings for a boat bound for Dilmun.",
+    purse: ["His last ship sank on the way to Dilmun, and money is very tight.",
+            "His last customer still hasn’t paid for the boat.",
+            "He has the usual silver of a working shipwright.",
+            "A merchant just paid him in advance for a new boat.",
+            "He’s building a ship for the governor, and his purse is bulging."] },
+  { name: "Taram the brewer",
+    about: "Wants a copper ladle for stirring her barley beer.",
+    purse: ["Her last batch went sour and she had to pour it all out.",
+            "The festival is over and the tavern is quiet.",
+            "Her tavern does a fair, ordinary trade.",
+            "A festival is coming and her beer is selling fast.",
+            "She just won the contract to supply beer to the temple."] },
+  { name: "Kuri the goat trader",
+    about: "Wants a copper bell so his goats stop wandering off.",
+    purse: ["Three of his goats ran away last week, and he’s nearly broke.",
+            "Goat prices are low at the market this season.",
+            "He carries the purse of an ordinary herdsman.",
+            "He sold a prize goat yesterday and is feeling cheerful.",
+            "He just sold his whole herd to the palace kitchens."] },
+  { name: "Abum the temple steward",
+    about: "Buying copper for the temple’s new offering bowls.",
+    purse: ["The priests ordered him to spend as little as possible.",
+            "The temple budget is tighter than usual this year.",
+            "He has the temple’s ordinary allowance for supplies.",
+            "A wealthy family just made a large gift to the temple.",
+            "The temple is rebuilding and has silver to spare."] }
+];
+
+const NANNI = {
+  name: "Nanni",
+  about: "A merchant who buys copper in bulk. He knows a bad ingot when he sees one.",
+  purse: ["He says his own customers still owe him money.",
+          "He grumbles that copper prices are far too high these days.",
+          "He has come with an ordinary merchant’s purse.",
+          "He has a big order to fill and needs copper soon.",
+          "He’s desperate for copper and has brought plenty of silver."]
+};
+
+const RATINGS = [
+  { min: 38, name: "Merchant Prince of Ur" },
+  { min: 33, name: "Shrewd Dealer" },
+  { min: 28, name: "Honest Trader" },
+  { min: 20, name: "Struggling Merchant" },
+  { min: 0,  name: "Literally Ea-nasir" }
+];
+
+// ===== Repeatable randomness: add ?seed=1 to the address for the same game every time =====
+const params = new URLSearchParams(location.search);
+let seed = Number(params.get("seed")) || Math.floor(Math.random() * 1e9);
+function random() {
+  seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+  let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+}
+function shuffle(list) {
+  const a = list.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ===== Game state =====
+let state = "instructions";   // instructions | offering | reaction | complaint | result
+let round;                    // { customers, index, silver, reputation, pendingComplaint, lastOutcome }
+
+function newRound() {
+  const people = shuffle(CUSTOMER_POOL).slice(0, 4).concat(NANNI);
+  const ingots = shuffle(GRADES);
+  const customers = people.map((person, i) => ({
+    name: person.name,
+    person,
+    grade: ingots[i],
+    luck: Math.floor(random() * (SETTINGS.luckRange * 2 + 1)) - SETTINGS.luckRange
+  }));
+  round = { customers, index: 0, silver: 0, reputation: SETTINGS.startReputation, pendingComplaint: null };
+}
+
+function current() { return round.customers[round.index]; }
+
+function customerLimit(c) {
+  const raw = Math.round(SETTINGS.limitBase + round.reputation * SETTINGS.trustFactor + c.luck);
+  return Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, raw));
+}
+
+function trustText(rep, first) {
+  if (rep >= 85) return `Word in the market is that you’re the most honest dealer in Ur. ${first} is ready to pay well.`;
+  if (rep >= 70) return `${first} has heard good things about your shop and seems relaxed.`;
+  if (rep >= 40) return `${first} doesn’t know your reputation either way, and is watching you closely.`;
+  if (rep >= 20) return `${first} has heard complaints about you and keeps a firm grip on the purse.`;
+  return `${first} has seen the complaint tablets with your name on them. Expect a low offer to be the only one that works.`;
+}
+
+function purseText(c) { return c.person.purse[c.luck + SETTINGS.luckRange]; }
+
+function ratingFor(silver) { return RATINGS.find(r => silver >= r.min).name; }
+
+// ===== The core rule: what happens to one offer =====
+function resolveOffer(price) {
+  const c = current();
+  const fair = c.grade.fair;
+  const limit = customerLimit(c);
+  const overBy = price - fair;
+  const drop = Math.min(SETTINGS.maxDrop, SETTINGS.dropPerShekel * Math.max(0, overBy));
+
+  if (price > limit) return { kind: "walkout", silver: 0, rep: 0 };
+  if (price > fair * SETTINGS.returnRatio) return { kind: "returned", silver: 0, rep: -drop };
+  if (price > fair) return { kind: "overcharged", silver: price, rep: -drop };
+  return { kind: "fair", silver: price, rep: +SETTINGS.fairSaleBonus };
+}
+
+function clampRep(r) { return Math.max(0, Math.min(100, r)); }
+
+// ===== Complaint wording (written for this game) =====
+function complaintFor(c, price, kind) {
+  const g = c.grade.name.toLowerCase();
+  if (kind === "returned") {
+    if (c.name === "Nanni") {
+      return `You took ${price} shekels for “${g}” copper. I am sending it back, and I expect my silver. My messenger crossed dangerous country to reach you, and you treated him with contempt. I will not be dealt with like this again.`;
+    }
+    return `I paid you ${price} shekels for this lump of “${g}” copper. I am returning it. Send my silver back with my servant, and do not insult him this time.`;
+  }
+  if (c.name === "Nanni") {
+    return `${price} shekels for “${g}” copper? I asked for good ingots and you sent me this. Who do you think you are, to treat a customer so carelessly?`;
+  }
+  return `You charged me ${price} shekels for “${g}” copper that is worth less than that. I am telling everyone at the market what kind of merchant you are.`;
+}
+
+// ===== Screens =====
+const $ = (id) => document.getElementById(id);
+const panels = ["instructionsPanel", "offerPanel", "reactionPanel", "complaintPanel", "resultPanel"];
+
+let showPanel = function (id, focusId) {
+  for (const p of panels) $(p).hidden = (p !== id);
+  $("stats").hidden = (id === "instructionsPanel");
+  if (focusId) $(focusId).focus({ preventScroll: true });
+};
+
+function updateStats() {
+  $("custNum").textContent = `${Math.min(round.index + 1, 5)} of 5`;
+  $("silver").textContent = round.silver;
+  $("repNum").textContent = round.reputation;
+  $("repFill").style.width = round.reputation + "%";
+}
+
+function drawIngot(grade) {
+  // A flat copper ingot; lower grades get grey lumps of rock
+  let svg = `<path d="M10 14 Q48 4 86 14 L80 52 Q48 60 16 52 Z" fill="${grade.color}" stroke="#4a2e1a" stroke-width="2"/>`;
+  svg += `<path d="M18 18 Q48 11 76 18" fill="none" stroke="rgba(255,230,190,0.5)" stroke-width="3"/>`;
+  const spots = [[30,30],[60,38],[44,44],[70,24],[24,42],[52,26],[38,22],[64,48]];
+  for (let i = 0; i < grade.lumps; i++) {
+    const [x, y] = spots[i];
+    svg += `<ellipse cx="${x}" cy="${y}" rx="${5 + (i % 3)}" ry="${4 + (i % 2)}" fill="#8d877d" stroke="#5c564f" stroke-width="1"/>`;
+  }
+  $("ingotArt").innerHTML = svg;
+}
+
+function setPrice(p) {
+  const price = Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, p));
+  $("priceSlider").value = price;
+  $("priceShow").textContent = price;
+}
+
+function showCustomer() {
+  const c = current();
+  state = "offering";
+  updateStats();
+  $("custName").textContent = c.name;
+  $("custAbout").textContent = c.person.about;
+  $("custPurse").textContent = purseText(c);
+  $("custTrust").textContent = trustText(round.reputation, c.name.split(" ")[0]);
+  $("gradeName").textContent = c.grade.name;
+  $("fairPrice").textContent = `Fair price: ${c.grade.fair} shekels`;
+  drawIngot(c.grade);
+  setPrice(c.grade.fair);
+  showPanel("offerPanel", "priceSlider");
+}
+
+function makeOffer() {
+  if (state !== "offering") return;            // only one offer per customer
+  state = "reaction";
+  const c = current();
+  const price = Number($("priceSlider").value);
+  const result = resolveOffer(price);
+  const repBefore = round.reputation;
+  round.silver += result.silver;
+  round.reputation = clampRep(round.reputation + result.rep);
+  const repChange = round.reputation - repBefore;
+  round.pendingComplaint = (result.kind === "returned" || result.kind === "overcharged")
+    ? { from: c.name, text: complaintFor(c, price, result.kind), repChange }
+    : null;
+
+  const first = c.name.split(" ")[0];
+  const titles = {
+    fair: ["Sold!", "good", `${first} pays ${price} shekels and leaves happy.`],
+    overcharged: ["Sold!", "good", `${first} pays ${price} shekels… and frowns at the ingot on the way out.`],
+    returned: ["Sold… then returned!", "bad", `${first} paid ${price} shekels, took one look at the ingot, and came straight back.`],
+    walkout: ["They walked out", "bad", `${first} won’t pay ${price} shekels and leaves without buying.`]
+  };
+  const [title, tone, text] = titles[result.kind];
+  $("outcomeTitle").textContent = title;
+  $("outcomeTitle").className = "outcome " + tone;
+  $("outcomeText").textContent = text;
+  const changes = [`Silver: +${result.silver}`];
+  if (result.kind === "fair") changes.push(`Reputation: +${repChange}`);
+  if (round.pendingComplaint) changes.push("A complaint tablet is on its way…");
+  $("outcomeChanges").innerHTML = changes.map(t => `<li>${t}</li>`).join("");
+  $("nextBtn").textContent = round.index === 4 ? "Close the shop" : "Next customer";
+  updateStats();
+  showPanel("reactionPanel", "nextBtn");
+}
+
+function afterReaction() {
+  if (state !== "reaction") return;
+  if (round.index === 4) return showResult();
+  if (round.pendingComplaint) {
+    state = "complaint";
+    const pc = round.pendingComplaint;
+    $("complaintFrom").textContent = `To Ea-nasir, from ${pc.from}:`;
+    $("complaintText").textContent = pc.text;
+    $("complaintEffect").textContent = `Reputation: −${Math.abs(pc.repChange)}. Word travels fast in Ur.`;
+    showPanel("complaintPanel", "continueBtn");
+    return;
+  }
+  round.index += 1;
+  showCustomer();
+}
+
+function afterComplaint() {
+  if (state !== "complaint") return;
+  round.pendingComplaint = null;
+  round.index += 1;
+  showCustomer();
+}
+
+function showResult() {
+  state = "result";
+  const mine = ratingFor(round.silver);
+  $("ratingName").textContent = mine;
+  $("ratingLadder").innerHTML = RATINGS.map((r, i) => {
+    const top = i === 0 ? null : RATINGS[i - 1].min - 1;
+    const range = i === 0 ? `${r.min}+ shekels`
+      : r.min === 0 ? `under ${RATINGS[i - 1].min}`
+      : `${r.min}–${top}`;
+    const isMine = r.name === mine;
+    return `<li class="${isMine ? "you" : ""}"${isMine ? ' aria-current="true"' : ""}>` +
+      `<span class="marker">${isMine ? "▶" : ""}</span><span>${r.name}${isMine ? " (you)" : ""}</span>` +
+      `<span class="range">${range}</span></li>`;
+  }).join("");
+  $("resultSummary").textContent =
+    `You made ${round.silver} shekels of silver. Final reputation: ${round.reputation}.`;
+  const pc = round.pendingComplaint;
+  $("lastTablet").hidden = !pc;
+  if (pc) {
+    $("lastFrom").textContent = `One last tablet, from ${pc.from}:`;
+    $("lastText").textContent = pc.text;
+  }
+  updateStats();
+  showPanel("resultPanel", "againBtn");
+}
+
+function startShop() {
+  if (state !== "instructions" && state !== "result") return;
+  newRound();
+  showCustomer();
+}
+
+// ===== Controls =====
+$("openBtn").addEventListener("click", startShop);
+$("againBtn").addEventListener("click", startShop);
+$("offerBtn").addEventListener("click", makeOffer);
+$("nextBtn").addEventListener("click", afterReaction);
+$("continueBtn").addEventListener("click", afterComplaint);
+$("minusBtn").addEventListener("click", () => setPrice(Number($("priceSlider").value) - 1));
+$("plusBtn").addEventListener("click", () => setPrice(Number($("priceSlider").value) + 1));
+$("priceSlider").addEventListener("input", () => setPrice(Number($("priceSlider").value)));
+
+// Enter = the main button on screen. The game handles Enter itself (and blocks the
+// browser's own button press), so one press can never count twice. A short pause after
+// each screen change also stops a held or bouncing key from skipping ahead.
+let lastScreenChange = 0;
+const _showPanel = showPanel;
+showPanel = function (id, focusId) { lastScreenChange = performance.now(); _showPanel(id, focusId); };
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  const t = e.target;
+  if (t === $("minusBtn") || t === $("plusBtn")) return;   // let − / + work normally
+  e.preventDefault();
+  if (e.repeat || performance.now() - lastScreenChange < 250) return;
+  if (state === "instructions" || state === "result") startShop();
+  else if (state === "offering") makeOffer();
+  else if (state === "reaction") afterReaction();
+  else if (state === "complaint") afterComplaint();
+});
+</script>
+</body>
+</html>
