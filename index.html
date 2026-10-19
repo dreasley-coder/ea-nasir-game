@@ -85,18 +85,13 @@
   .customer { margin-bottom: 12px; }
   .customer-name { font-weight: bold; font-size: 1.15rem; }
   .about { color: var(--muted); font-style: italic; margin-bottom: 8px; }
-  .hints {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 4px 12px;
-    margin: 0;
-    padding: 10px 12px;
-    background: rgba(138, 90, 53, 0.08);
-    border-left: 3px solid var(--copper);
-    border-radius: 0 6px 6px 0;
-  }
-  .hints dt { font-weight: bold; color: var(--copper); }
-  .hints dd { margin: 0; }
+  .portrait { display: block; border-radius: 50%; flex: 0 0 auto; }
+  .customer { display: flex; gap: 14px; align-items: flex-start; }
+  .seller-row { display: flex; align-items: center; gap: 14px; margin: 14px 0; padding: 10px 12px;
+    background: rgba(138, 90, 53, 0.08); border-radius: 8px; }
+  .seller-tag { font-size: 0.8rem; color: var(--muted); text-align: center; margin-top: 2px; }
+  .reaction-head { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+  .intro-head { display: flex; gap: 16px; align-items: center; margin-bottom: 10px; }
 
   .ladder { list-style: none; padding: 0; margin: 4px 0 16px; }
   .ladder li {
@@ -200,14 +195,20 @@
 
   <!-- Instructions -->
   <section class="panel" id="instructionsPanel">
-    <h2>Make as much silver as you can</h2>
-    <p>You have five copper ingots of… varying quality. Five customers are on their way.</p>
+    <div class="intro-head">
+      <div><span id="introPortrait"></span><div class="seller-tag">Ea-nasir (you)</div></div>
+      <div>
+        <h2>Make as much silver as you can</h2>
+        <p>You have five copper ingots of… varying quality. Five customers are on their way.</p>
+      </div>
+    </div>
     <ol>
       <li>You know each ingot’s true quality. Your customer doesn’t.</li>
       <li>Pick a price from 1 to 25 shekels and make one offer.</li>
-      <li>Too high for them, and they walk out. What they’ll pay depends on two things: how much silver they’re carrying, and how much they trust you. Read their description for clues.</li>
-      <li>Charge more than the fair price and a complaint tablet follows. Your reputation drops, and later customers will pay less.</li>
-      <li>Charge more than 50% above the fair price and they return the ingot. You keep nothing.</li>
+      <li>Too high for them, and they walk out. Richer customers pay more, and so does everyone when your reputation is good.</li>
+      <li>Some customers know copper well. Others can’t tell an ingot from a rock. Overcharge someone who doesn’t notice, and they leave happy.</li>
+      <li>Overcharge someone who <em>does</em> notice, and a complaint tablet follows. Your reputation drops and later customers pay less. If you charged more than 50% over the fair price, they return the ingot and you keep nothing.</li>
+      <li>Read each customer’s description for clues about their purse and their eye for copper.</li>
     </ol>
     <button class="primary" id="openBtn" type="button">Open the shop</button>
   </section>
@@ -215,14 +216,14 @@
   <!-- Offering -->
   <section class="panel" id="offerPanel" hidden>
     <div class="customer">
-      <div class="customer-name" id="custName"></div>
-      <div class="about" id="custAbout"></div>
-      <dl class="hints">
-        <dt>Purse</dt><dd id="custPurse"></dd>
-        <dt>Trust</dt><dd id="custTrust"></dd>
-      </dl>
+      <span id="custPortrait"></span>
+      <div>
+        <div class="customer-name" id="custName"></div>
+        <div class="about" id="custAbout"></div>
+      </div>
     </div>
-    <div class="ingot-row">
+    <div class="seller-row">
+      <div><span id="sellerPortrait"></span><div class="seller-tag">You</div></div>
       <svg id="ingotArt" width="96" height="64" viewBox="0 0 96 64" aria-hidden="true"></svg>
       <div>
         <div class="grade" id="gradeName"></div>
@@ -243,7 +244,10 @@
 
   <!-- Reaction -->
   <section class="panel" id="reactionPanel" hidden>
-    <div class="outcome" id="outcomeTitle"></div>
+    <div class="reaction-head">
+      <span id="reactPortrait"></span>
+      <div class="outcome" id="outcomeTitle"></div>
+    </div>
     <p id="outcomeText"></p>
     <ul class="changes" id="outcomeChanges"></ul>
     <button class="primary" id="nextBtn" type="button">Next customer</button>
@@ -262,8 +266,13 @@
 
   <!-- Result -->
   <section class="panel" id="resultPanel" hidden>
-    <h2>The shop is closed</h2>
-    <div class="rating" id="ratingName"></div>
+    <div class="intro-head">
+      <span id="resultPortrait"></span>
+      <div>
+        <h2>The shop is closed</h2>
+        <div class="rating" id="ratingName"></div>
+      </div>
+    </div>
     <p id="resultSummary"></p>
     <ol class="ladder" id="ratingLadder" aria-label="All merchant ratings"></ol>
     <div class="tablet" id="lastTablet" hidden>
@@ -274,16 +283,20 @@
     <button class="primary" id="againBtn" type="button">Open a new shop</button>
   </section>
 
-  <p class="footnote">Ea-nasir and Nanni’s complaint are real history. Everything else here is invented for fun.</p>
+  <p class="footnote">Ea-nasir and Nanni’s complaint are real history. No picture of Ea-nasir survives, so every portrait here is imagined, and the other customers are invented for fun.</p>
 </main>
 
 <script>
 // ===== Game settings: change these numbers to tune the game =====
 const SETTINGS = {
   startReputation: 60,
-  limitBase: 4,             // customer limit = base + reputation × trustFactor + luck
+  limitBase: 4,             // customer limit = base + reputation × trustFactor + wealth + luck
   trustFactor: 0.12,
-  luckRange: 2,             // luck is a whole number from −2 to +2
+  luckRange: 1,             // small hidden luck: a whole number from −1 to +1
+  // Chance a customer notices an overcharge, by how well they know copper (hidden):
+  // 0 = can't tell copper from rock, 1 = a little, 2 = knows it well, 3 = expert
+  noticeChance: [0.10, 0.40, 0.75, 1.00],
+  blatantBonus: 0.25,       // extra chance to notice if price is over 1.5 × fair
   fairSaleBonus: 8,         // reputation gained for a fair sale
   dropPerShekel: 3,         // reputation lost per shekel above fair
   maxDrop: 30,
@@ -300,66 +313,69 @@ const GRADES = [
   { name: "Mostly rock", fair: 2,  color: "#7b746b", lumps: 8 }
 ];
 
-// Each customer: who they are, and five purse hints.
-// purse[0] = luck −2 (short of silver) … purse[4] = luck +2 (lots of silver).
+// Each customer has a look (for their portrait) and three possible visits.
+// Each visit: a description with built-in hints, how well they know copper (knows: 0–3),
+// and how much silver they carry (wealth: −2 to +2). Neither number is shown to the player.
 const CUSTOMER_POOL = [
   { name: "Ubar-Sin the scribe",
-    about: "Needs copper to make new styluses for the temple school.",
-    purse: ["Scribes are not paid much, and his sandals have holes in them.",
-            "He mentions that the temple has been paying him late.",
-            "He has the ordinary purse of a working scribe.",
-            "He just copied out a rich man’s will and was paid well for it.",
-            "A royal official has hired him, and he’s in a generous mood."] },
+    look: { skin: "#c68c5a", hair: "#2b1a12", cloth: "#e9dfc8", bg: "#9fb6c9", beard: "short", head: "cap", accent: "#5d7fa3" },
+    visits: [
+      { knows: 0, wealth: -1, text: "Needs copper to make new styluses for the temple school. He’s never worked metal in his life, and asks which side of the ingot is the front. His sandals are patched." },
+      { knows: 2, wealth: 0, text: "Sent by the school’s master smith to fetch copper. He reads carefully from a tablet listing exactly what the smith wants." },
+      { knows: 3, wealth: 1, text: "Buying a gift for his father, a retired coppersmith who will inspect every inch of it. He was just paid well for copying a rich man’s will." }
+    ] },
   { name: "Shala the potter",
-    about: "Wants copper tools to carve patterns into her finest jars.",
-    purse: ["Her last kiln load cracked, and she’s counting every shekel.",
-            "Business at her stall has been slow this month.",
-            "Her stall does a steady, ordinary trade.",
-            "She just sold a whole set of wine jars to a tavern.",
-            "A palace order for a hundred jars has made her rich this season."] },
+    look: { skin: "#a8703f", hair: "#1e130d", cloth: "#b8592f", bg: "#d9a979", beard: "none", head: "bun", accent: "#d4a017" },
+    visits: [
+      { knows: 2, wealth: 0, text: "Wants copper tools to carve patterns into her jars. She says the last seller cheated her, and she won’t let it happen twice." },
+      { knows: 0, wealth: 1, text: "Buying a wedding gift for her nephew. She cheerfully admits she can’t tell copper from bronze. A tavern just bought a whole set of her wine jars." },
+      { knows: 1, wealth: -2, text: "Her kiln cracked and she needs cheap copper to patch the door. “Any lump will do,” she says, counting out every last shekel." }
+    ] },
   { name: "Ilsu the shipwright",
-    about: "Needs copper nails and fittings for a boat bound for Dilmun.",
-    purse: ["His last ship sank on the way to Dilmun, and money is very tight.",
-            "His last customer still hasn’t paid for the boat.",
-            "He has the usual silver of a working shipwright.",
-            "A merchant just paid him in advance for a new boat.",
-            "He’s building a ship for the governor, and his purse is bulging."] },
+    look: { skin: "#8d5a35", hair: "#3a2416", cloth: "#7b5b3a", bg: "#7fa7b3", beard: "short", head: "band", accent: "#24447a" },
+    visits: [
+      { knows: 3, wealth: 0, text: "Needs copper nails for a boat bound for Dilmun. He has handled copper fittings every day for twenty years, and runs a thumb along the ingot’s edge." },
+      { knows: 3, wealth: 2, text: "Building a ship for the governor, who has his own metalworkers check every delivery. The governor is paying handsomely." },
+      { knows: 1, wealth: -1, text: "His young apprentice is buying today while Ilsu is at the docks. The boy clutches a small purse and looks nervous." }
+    ] },
   { name: "Taram the brewer",
-    about: "Wants a copper ladle for stirring her barley beer.",
-    purse: ["Her last batch went sour and she had to pour it all out.",
-            "The festival is over and the tavern is quiet.",
-            "Her tavern does a fair, ordinary trade.",
-            "A festival is coming and her beer is selling fast.",
-            "She just won the contract to supply beer to the temple."] },
+    look: { skin: "#b67b4c", hair: "#2a1a10", cloth: "#5f7f4a", bg: "#c9b27a", beard: "none", head: "veil", accent: "#e8dcc0" },
+    visits: [
+      { knows: 1, wealth: 0, text: "Wants a copper ladle for stirring her barley beer. She knows everything about beer and very little about metal." },
+      { knows: 2, wealth: 2, text: "The temple has asked her to supply copper cups for a festival. A priest will inspect them, and the temple is paying well." },
+      { knows: 0, wealth: -2, text: "Her last batch went sour and she had to pour it all out. She needs the cheapest ladle she can get, and barely glances at the ingot." }
+    ] },
   { name: "Kuri the goat trader",
-    about: "Wants a copper bell so his goats stop wandering off.",
-    purse: ["Three of his goats ran away last week, and he’s nearly broke.",
-            "Goat prices are low at the market this season.",
-            "He carries the purse of an ordinary herdsman.",
-            "He sold a prize goat yesterday and is feeling cheerful.",
-            "He just sold his whole herd to the palace kitchens."] },
+    look: { skin: "#9c6438", hair: "#4a2e1c", cloth: "#d8c9a8", bg: "#a9bb8c", beard: "short", head: "cap", accent: "#8a5a35", fringe: true },
+    visits: [
+      { knows: 0, wealth: 0, text: "Wants a copper bell so his goats stop wandering off. He calls copper “the shiny brown stuff.”" },
+      { knows: 0, wealth: 2, text: "Just sold his whole herd to the palace kitchens and wants a fancy copper ornament to impress the neighbors. He’s never owned anything metal before." },
+      { knows: 2, wealth: -1, text: "Goat prices are low this season. He keeps mentioning his cousin, a coppersmith in Lagash, who will look at whatever he buys." }
+    ] },
   { name: "Abum the temple steward",
-    about: "Buying copper for the temple’s new offering bowls.",
-    purse: ["The priests ordered him to spend as little as possible.",
-            "The temple budget is tighter than usual this year.",
-            "He has the temple’s ordinary allowance for supplies.",
-            "A wealthy family just made a large gift to the temple.",
-            "The temple is rebuilding and has silver to spare."] }
+    look: { skin: "#c08552", hair: "#2b1a12", cloth: "#f2ead8", bg: "#c7a8c4", beard: "none", head: "bald", accent: "#d4a017", fringe: true },
+    visits: [
+      { knows: 3, wealth: 1, text: "Buying copper for the temple’s new offering bowls. The priests weigh and test every ingot he brings back. A wealthy family just made a large gift to the temple." },
+      { knows: 1, wealth: -2, text: "The temple is short of silver this year. He’s been told to buy the cheapest copper he can find, and seems to care only about the price." },
+      { knows: 2, wealth: 0, text: "Buying a small piece for his own household. He is a careful man who keeps detailed accounts of everything he buys." }
+    ] }
 ];
 
 const NANNI = {
   name: "Nanni",
-  about: "A merchant who buys copper in bulk. He knows a bad ingot when he sees one.",
-  purse: ["He says his own customers still owe him money.",
-          "He grumbles that copper prices are far too high these days.",
-          "He has come with an ordinary merchant’s purse.",
-          "He has a big order to fill and needs copper soon.",
-          "He’s desperate for copper and has brought plenty of silver."]
+  look: { skin: "#a86d3e", hair: "#1c120c", cloth: "#24447a", bg: "#b8692f", beard: "long", head: "cap", accent: "#1c2f55" },
+  visits: [
+    { knows: 3, wealth: 0, text: "A merchant who buys copper in bulk. He has inspected thousands of ingots, and he has complained to you before." },
+    { knows: 2, wealth: 1, text: "He has a big order to fill quickly and seems in a hurry, glancing at the ingot only briefly." },
+    { knows: 3, wealth: -1, text: "He says this is your last chance to earn back his trust. He has brought his own scales." }
+  ]
 };
 
+const EA_NASIR = { skin: "#b07443", hair: "#20140c", cloth: "#7a2e2a", bg: "#24447a", beard: "long", head: "cap", accent: "#d4a017", ingot: true };
+
 const RATINGS = [
-  { min: 38, name: "Merchant Prince of Ur" },
-  { min: 33, name: "Shrewd Dealer" },
+  { min: 42, name: "Merchant Prince of Ur" },
+  { min: 35, name: "Shrewd Dealer" },
   { min: 28, name: "Honest Trader" },
   { min: 20, name: "Struggling Merchant" },
   { min: 0,  name: "Literally Ea-nasir" }
@@ -393,8 +409,10 @@ function newRound() {
   const customers = people.map((person, i) => ({
     name: person.name,
     person,
+    visit: person.visits[Math.floor(random() * person.visits.length)],
     grade: ingots[i],
-    luck: Math.floor(random() * (SETTINGS.luckRange * 2 + 1)) - SETTINGS.luckRange
+    luck: Math.floor(random() * (SETTINGS.luckRange * 2 + 1)) - SETTINGS.luckRange,
+    noticeRoll: random()          // rolled in advance so ?seed games repeat exactly
   }));
   round = { customers, index: 0, silver: 0, reputation: SETTINGS.startReputation, pendingComplaint: null };
 }
@@ -402,19 +420,9 @@ function newRound() {
 function current() { return round.customers[round.index]; }
 
 function customerLimit(c) {
-  const raw = Math.round(SETTINGS.limitBase + round.reputation * SETTINGS.trustFactor + c.luck);
+  const raw = Math.round(SETTINGS.limitBase + round.reputation * SETTINGS.trustFactor + c.visit.wealth + c.luck);
   return Math.max(SETTINGS.minPrice, Math.min(SETTINGS.maxPrice, raw));
 }
-
-function trustText(rep, first) {
-  if (rep >= 85) return `Word in the market is that you’re the most honest dealer in Ur. ${first} is ready to pay well.`;
-  if (rep >= 70) return `${first} has heard good things about your shop and seems relaxed.`;
-  if (rep >= 40) return `${first} doesn’t know your reputation either way, and is watching you closely.`;
-  if (rep >= 20) return `${first} has heard complaints about you and keeps a firm grip on the purse.`;
-  return `${first} has seen the complaint tablets with your name on them. Expect a low offer to be the only one that works.`;
-}
-
-function purseText(c) { return c.person.purse[c.luck + SETTINGS.luckRange]; }
 
 function ratingFor(silver) { return RATINGS.find(r => silver >= r.min).name; }
 
@@ -427,9 +435,13 @@ function resolveOffer(price) {
   const drop = Math.min(SETTINGS.maxDrop, SETTINGS.dropPerShekel * Math.max(0, overBy));
 
   if (price > limit) return { kind: "walkout", silver: 0, rep: 0 };
-  if (price > fair * SETTINGS.returnRatio) return { kind: "returned", silver: 0, rep: -drop };
-  if (price > fair) return { kind: "overcharged", silver: price, rep: -drop };
-  return { kind: "fair", silver: price, rep: +SETTINGS.fairSaleBonus };
+  if (price <= fair) return { kind: "fair", silver: price, rep: +SETTINGS.fairSaleBonus };
+  // Overcharged: do they notice? It depends on how well they know copper.
+  const blatant = price > fair * SETTINGS.returnRatio;
+  const chance = Math.min(1, SETTINGS.noticeChance[c.visit.knows] + (blatant ? SETTINGS.blatantBonus : 0));
+  if (c.noticeRoll >= chance) return { kind: "fooled", silver: price, rep: +SETTINGS.fairSaleBonus };
+  if (blatant) return { kind: "returned", silver: 0, rep: -drop };
+  return { kind: "overcharged", silver: price, rep: -drop };
 }
 
 function clampRep(r) { return Math.max(0, Math.min(100, r)); }
@@ -466,6 +478,59 @@ function updateStats() {
   $("repFill").style.width = round.reputation + "%";
 }
 
+// ===== Portraits: simple shapes inspired by ancient Mesopotamian statues =====
+let portraitCount = 0;
+function portrait(look, mood = "neutral", size = 88) {
+  const id = "pc" + (portraitCount++);
+  const line = "#2b1b10";
+  const shade = "rgba(0,0,0,0.18)";
+  let g = `<circle cx="50" cy="55" r="50" fill="${look.bg}"/>`;
+  // hair or veil behind the head
+  if (look.head === "bun") g += `<ellipse cx="50" cy="34" rx="22" ry="17" fill="${look.hair}"/><circle cx="50" cy="15" r="9" fill="${look.hair}"/>`;
+  if (look.head === "veil") g += `<path d="M24 80 Q22 30 50 20 Q78 30 76 80 Z" fill="${look.accent}" stroke="${shade}"/>`;
+  // garment, with woolly fringe tufts for some
+  g += `<path d="M6 112 Q12 84 50 80 Q88 84 94 112 Z" fill="${look.cloth}" stroke="${shade}"/>`;
+  g += `<path d="M30 84 Q48 96 66 112" fill="none" stroke="${shade}" stroke-width="3"/>`;
+  if (look.fringe) for (let y = 92; y < 112; y += 8) for (let x = 12 + (y % 16 ? 4 : 0); x < 90; x += 8)
+    g += `<path d="M${x} ${y} q4 6 8 0" fill="none" stroke="${shade}" stroke-width="1.5"/>`;
+  // neck, ears, face
+  g += `<rect x="43" y="62" width="14" height="20" fill="${look.skin}"/>`;
+  g += `<ellipse cx="33" cy="50" rx="3.5" ry="5" fill="${look.skin}" stroke="${shade}"/><ellipse cx="67" cy="50" rx="3.5" ry="5" fill="${look.skin}" stroke="${shade}"/>`;
+  g += `<ellipse cx="50" cy="48" rx="17" ry="21" fill="${look.skin}" stroke="${shade}"/>`;
+  // hair and headwear on top
+  if (look.head === "cap") g += `<path d="M31 42 Q30 20 50 20 Q70 20 69 42 Q50 33 31 42 Z" fill="${look.accent}" stroke="${shade}"/><path d="M31 41 Q50 32 69 41" fill="none" stroke="${look.hair}" stroke-width="3"/>`;
+  if (look.head === "band" || look.head === "bun") g += `<path d="M33 42 Q32 26 50 26 Q68 26 67 42 Q50 34 33 42 Z" fill="${look.hair}"/><path d="M33 38 Q50 31 67 38" fill="none" stroke="${look.accent}" stroke-width="3"/>`;
+  if (look.head === "veil") g += `<path d="M34 40 Q34 28 50 28 Q66 28 66 40 Q50 34 34 40 Z" fill="${look.hair}"/>`;
+  if (look.head === "bald") g += `<path d="M38 33 Q46 28 54 30" fill="none" stroke="rgba(255,255,255,0.35)" stroke-width="2"/>`;
+  // beard
+  if (look.beard === "short") g += `<path d="M34 52 Q36 72 50 74 Q64 72 66 52 Q60 63 50 63 Q40 63 34 52 Z" fill="${look.hair}"/>`;
+  if (look.beard === "long") {
+    g += `<path d="M33 52 Q32 90 50 96 Q68 90 67 52 Q60 64 50 64 Q40 64 33 52 Z" fill="${look.hair}"/>`;
+    for (let y = 72; y < 94; y += 7) for (let x = 40; x <= 60; x += 6.5)
+      g += `<path d="M${x - 2.5} ${y} q2.5 -4 5 0" fill="none" stroke="rgba(255,255,255,0.25)" stroke-width="1.3"/>`;
+  }
+  // big inlaid eyes and joined brows, as on Sumerian statues
+  const angry = mood === "angry" || mood === "annoyed";
+  g += angry
+    ? `<path d="M37 39 L48 43 M63 39 L52 43" stroke="${look.hair}" stroke-width="2.6" stroke-linecap="round"/>`
+    : `<path d="M37 42 Q43 37 50 41 Q57 37 63 42" fill="none" stroke="${look.hair}" stroke-width="2.6" stroke-linecap="round"/>`;
+  for (const ex of [43, 57]) g += `<ellipse cx="${ex}" cy="47" rx="5" ry="3.2" fill="#fbf6ea" stroke="${line}" stroke-width="1"/><circle cx="${ex + (mood === "sly" ? 1.5 : 0)}" cy="47" r="2" fill="${line}"/>`;
+  g += `<path d="M50 48 L47 57 L51 57" fill="none" stroke="${shade}" stroke-width="1.5" stroke-linejoin="round"/>`;
+  if (look.beard !== "none") g += `<path d="M42 61 Q50 58 58 61" fill="none" stroke="${look.hair}" stroke-width="3" stroke-linecap="round"/>`;
+  const mouths = {
+    neutral: "M45 64 L55 64",
+    happy: "M44 63 Q50 69 56 63",
+    sly: "M43 63 Q51 69 58 61",
+    suspicious: "M45 65 Q51 64 56 62",
+    annoyed: "M45 65 L55 64",
+    angry: "M44 67 Q50 61 56 67"
+  };
+  g += `<path d="${mouths[mood] || mouths.neutral}" fill="none" stroke="${look.beard === "none" ? line : "#e9c9a6"}" stroke-width="2" stroke-linecap="round"/>`;
+  if (look.ingot) g += `<g transform="rotate(-12 26 90)"><path d="M10 84 Q26 79 42 84 L39 96 Q26 100 13 96 Z" fill="#c8763a" stroke="${line}" stroke-width="1.2"/><path d="M15 86 Q26 83 37 86" fill="none" stroke="rgba(255,230,190,0.6)" stroke-width="2"/></g>`;
+  return `<svg class="portrait" width="${size}" height="${size}" viewBox="0 0 100 110" role="img" aria-hidden="true">` +
+    `<defs><clipPath id="${id}"><circle cx="50" cy="55" r="50"/></clipPath></defs><g clip-path="url(#${id})">${g}</g></svg>`;
+}
+
 function drawIngot(grade) {
   // A flat copper ingot; lower grades get grey lumps of rock
   let svg = `<path d="M10 14 Q48 4 86 14 L80 52 Q48 60 16 52 Z" fill="${grade.color}" stroke="#4a2e1a" stroke-width="2"/>`;
@@ -489,9 +554,9 @@ function showCustomer() {
   state = "offering";
   updateStats();
   $("custName").textContent = c.name;
-  $("custAbout").textContent = c.person.about;
-  $("custPurse").textContent = purseText(c);
-  $("custTrust").textContent = trustText(round.reputation, c.name.split(" ")[0]);
+  $("custAbout").textContent = c.visit.text;
+  $("custPortrait").innerHTML = portrait(c.person.look, "neutral", 92);
+  $("sellerPortrait").innerHTML = portrait(EA_NASIR, "sly", 60);
   $("gradeName").textContent = c.grade.name;
   $("fairPrice").textContent = `Fair price: ${c.grade.fair} shekels`;
   drawIngot(c.grade);
@@ -516,6 +581,7 @@ function makeOffer() {
   const first = c.name.split(" ")[0];
   const titles = {
     fair: ["Sold!", "good", `${first} pays ${price} shekels and leaves happy.`],
+    fooled: ["Sold!", "good", `${first} pays ${price} shekels and leaves happy, none the wiser.`],
     overcharged: ["Sold!", "good", `${first} pays ${price} shekels… and frowns at the ingot on the way out.`],
     returned: ["Sold… then returned!", "bad", `${first} paid ${price} shekels, took one look at the ingot, and came straight back.`],
     walkout: ["They walked out", "bad", `${first} won’t pay ${price} shekels and leaves without buying.`]
@@ -525,7 +591,9 @@ function makeOffer() {
   $("outcomeTitle").className = "outcome " + tone;
   $("outcomeText").textContent = text;
   const changes = [`Silver: +${result.silver}`];
-  if (result.kind === "fair") changes.push(`Reputation: +${repChange}`);
+  if (result.kind === "fair" || result.kind === "fooled") changes.push(`Reputation: +${repChange}`);
+  const faces = { fair: "happy", fooled: "happy", overcharged: "suspicious", returned: "angry", walkout: "annoyed" };
+  $("reactPortrait").innerHTML = portrait(c.person.look, faces[result.kind], 72);
   if (round.pendingComplaint) changes.push("A complaint tablet is on its way…");
   $("outcomeChanges").innerHTML = changes.map(t => `<li>${t}</li>`).join("");
   $("nextBtn").textContent = round.index === 4 ? "Close the shop" : "Next customer";
@@ -559,6 +627,7 @@ function afterComplaint() {
 function showResult() {
   state = "result";
   const mine = ratingFor(round.silver);
+  $("resultPortrait").innerHTML = portrait(EA_NASIR, mine === "Literally Ea-nasir" ? "annoyed" : "sly", 84);
   $("ratingName").textContent = mine;
   $("ratingLadder").innerHTML = RATINGS.map((r, i) => {
     const top = i === 0 ? null : RATINGS[i - 1].min - 1;
@@ -589,6 +658,7 @@ function startShop() {
 }
 
 // ===== Controls =====
+$("introPortrait").innerHTML = portrait(EA_NASIR, "sly", 92);
 $("openBtn").addEventListener("click", startShop);
 $("againBtn").addEventListener("click", startShop);
 $("offerBtn").addEventListener("click", makeOffer);

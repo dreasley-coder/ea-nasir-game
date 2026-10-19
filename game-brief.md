@@ -1,7 +1,7 @@
 # Game brief: Ea-nasir's Copper Co. (first version)
 
 ## Concept
-You are Ea-nasir, a copper merchant in ancient Ur. Your goal: make as much silver as possible from five ingots of very questionable quality. Overcharge and you profit now, but complaint tablets wreck your reputation and later customers pay less. Overcharge too much and the customer returns the ingot for nothing.
+You are Ea-nasir, a copper merchant in ancient Ur. Your goal: make as much silver as possible from five ingots of very questionable quality. Some customers know copper well and some can't tell it from a rock. Overcharge someone who doesn't notice and you profit; overcharge someone who does and complaint tablets wreck your reputation, or they return the ingot for nothing.
 
 ## Fact and fiction
 - **Real history:** a merchant named Ea-nasir lived in Ur around 1750 BC. A clay tablet survives in which a customer, Nanni, complains about poor-quality copper ingots and rude treatment of his messenger.
@@ -17,12 +17,14 @@ For each customer, look at your ingot's true quality, then choose a price (1 to 
 - Instructions show first. Nothing happens until **Open the shop** is pressed.
 - Five customers arrive one at a time ("Customer 1 of 5"). The fifth is always Nanni.
 - **You** see the ingot's true grade and its fair price. **The customer** only sees your pitch.
-- Each customer has a secret limit: the most they'll pay. It depends on your **reputation** plus a little luck. Their mood text hints at how much they trust you.
+- Each customer has a secret limit (the most they'll pay), based on their wealth and your **reputation**, and a hidden **eye for copper**. Their description hints at both through who they are, what the copper is for, and who they're buying it for.
+- Ea-nasir and every customer have an imagined portrait (no real picture of Ea-nasir survives).
 - **Price at or below their limit:** "Sold!" You gain that much silver.
 - **Price above their limit:** they walk out. No silver.
 - **Fair sale** (at or below fair price): reputation rises a little.
-- **Overcharging** (above fair price): you keep the silver, but a complaint tablet arrives and reputation drops.
-- **More than 50% above fair price:** the customer returns the ingot. No silver, and a complaint tablet.
+- **Overcharging, not noticed:** they leave happy; you keep the silver.
+- **Overcharging, noticed:** you keep the silver, but a complaint tablet arrives and reputation drops.
+- **Noticed, and more than 50% above fair price:** the customer returns the ingot. No silver, and a complaint tablet.
 
 ## Grades and fair prices (starting values, adjustable)
 | Grade | Fair price |
