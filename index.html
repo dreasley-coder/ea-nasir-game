@@ -196,6 +196,23 @@
   .two-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .secondary { display: block; width: 100%; padding: 13px; font-size: 1.1rem; font-weight: bold;
     background: var(--panel); color: var(--ink); border: 2px solid var(--clay-dark); }
+  .board { list-style: none; margin: 8px 0 0; padding: 0; counter-reset: none; }
+  .board li { display: grid; grid-template-columns: 2.2em 1fr auto; gap: 2px 10px; align-items: baseline;
+    padding: 7px 8px; border-bottom: 1px dashed var(--clay-dark); }
+  .board li:last-child { border-bottom: none; }
+  .board .rank { font-weight: bold; color: var(--copper); }
+  .board .who { font-weight: bold; overflow-wrap: anywhere; }
+  .board .silver { font-weight: bold; white-space: nowrap; }
+  .board .rate { grid-column: 2 / 4; font-size: 0.85rem; color: var(--muted); }
+  .board li.mine { background: rgba(184, 105, 47, 0.14); border-radius: 6px; }
+  .board-box { margin: 18px 0; padding: 14px 16px; border: 2px solid var(--clay-dark); border-radius: 8px; }
+  .board-box h3 { margin: 0 0 6px; color: var(--lapis); font-size: 1.15rem; }
+  .name-row { display: flex; gap: 8px; margin: 8px 0 4px; }
+  .name-row input { flex: 1; min-width: 0; font: inherit; padding: 10px 12px; border: 2px solid var(--clay-dark);
+    border-radius: 6px; background: var(--panel); color: var(--ink); }
+  .name-row button { flex: 0 0 auto; padding: 10px 16px; font-weight: bold; background: var(--lapis); color: #fdf6ea; border: 2px solid var(--lapis); }
+  .small { font-size: 0.85rem; color: var(--muted); margin: 0; }
+  .status { font-size: 0.95rem; margin: 6px 0 0; }
   .deal { background: rgba(138, 90, 53, 0.08); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; }
 
 </style>
@@ -234,6 +251,16 @@
       <li>Read each customer’s description for clues about their purse and their eye for copper.</li>
     </ol>
     <button class="primary" id="openBtn" type="button">Open the shop</button>
+    <button class="secondary" id="viewBoardBtn" type="button" style="margin-top:10px">See the leaderboard</button>
+  </section>
+
+  <!-- Leaderboard (from the start screen) -->
+  <section class="panel" id="boardPanel" hidden>
+    <h2>Top merchants of Ur</h2>
+    <p class="small">Scores from everyone who has played.</p>
+    <p class="status" id="boardStatus"></p>
+    <ol class="board" id="boardList" aria-label="Leaderboard"></ol>
+    <button class="primary" id="boardBackBtn" type="button" style="margin-top:16px">Back</button>
   </section>
 
   <!-- Step 1: offer -->
@@ -325,6 +352,18 @@
       <div class="wedges" aria-hidden="true">▾◂ ▾▾ ◂▾◂ ▾ ◂◂▾</div>
       <p class="from" id="lastFrom"></p>
       <p id="lastText"></p>
+    </div>
+    <div class="board-box">
+      <h3>Add your score to the leaderboard</h3>
+      <div id="submitArea">
+        <label for="lbName" class="small">Your name, shown publicly. A first name or nickname works best.</label>
+        <div class="name-row">
+          <input id="lbName" type="text" maxlength="20" autocomplete="nickname" placeholder="e.g. Nanni’s nemesis">
+          <button id="lbSubmit" type="button">Submit</button>
+        </div>
+      </div>
+      <p class="status" id="lbStatus" role="status"></p>
+      <ol class="board" id="resultBoard" aria-label="Leaderboard"></ol>
     </div>
     <button class="primary" id="againBtn" type="button">Open a new shop</button>
   </section>
@@ -519,13 +558,13 @@ function complaintFor(c, claim, delivered, price, kind) {
 
 // ===== Screens =====
 const $ = (id) => document.getElementById(id);
-const panels = ["instructionsPanel", "offerPanel", "responsePanel", "deliverPanel", "reactionPanel", "complaintPanel", "resultPanel"];
+const panels = ["instructionsPanel", "boardPanel", "offerPanel", "responsePanel", "deliverPanel", "reactionPanel", "complaintPanel", "resultPanel"];
 let lastScreenChange = -Infinity;
 
 function showPanel(id, focusId) {
   lastScreenChange = performance.now();
   for (const p of panels) $(p).hidden = (p !== id);
-  $("stats").hidden = (id === "instructionsPanel");
+  $("stats").hidden = (id === "instructionsPanel" || id === "boardPanel");
   if (focusId) $(focusId).focus({ preventScroll: true });
   window.scrollTo({ top: 0 });
 }
@@ -799,7 +838,90 @@ function showResult() {
     $("lastText").textContent = pc.text;
   }
   updateStats();
-  showPanel("resultPanel", "againBtn");
+  round.submitted = false;
+  $("submitArea").hidden = false;
+  $("lbSubmit").disabled = false;
+  $("lbStatus").textContent = "";
+  showPanel("resultPanel", "lbName");
+  loadBoard($("resultBoard"), $("lbStatus"));
+}
+
+// ===== Leaderboard (shared by everyone, stored online through /api/scores) =====
+const API = "/api/scores";
+
+function renderBoard(listEl, scores, myId) {
+  listEl.innerHTML = "";
+  scores.forEach((e, i) => {
+    const li = document.createElement("li");
+    if (e.id === myId) { li.className = "mine"; li.setAttribute("aria-current", "true"); }
+    const rank = document.createElement("span"); rank.className = "rank"; rank.textContent = (e.id === myId ? "▶" : "") + (i + 1);
+    const who = document.createElement("span"); who.className = "who"; who.textContent = e.name;   // textContent: names are never treated as code
+    const silver = document.createElement("span"); silver.className = "silver"; silver.textContent = `${e.silver} shekels`;
+    const rate = document.createElement("span"); rate.className = "rate"; rate.textContent = e.rating;
+    li.append(rank, who, silver, rate);
+    listEl.append(li);
+  });
+}
+
+async function loadBoard(listEl, statusEl) {
+  statusEl.textContent = "Loading the leaderboard…";
+  try {
+    const r = await fetch(API, { cache: "no-store" });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "unavailable");
+    renderBoard(listEl, data.scores, round && round.myEntryId);
+    statusEl.textContent = data.scores.length ? "" : "No scores yet. Be the first!";
+  } catch (err) {
+    listEl.innerHTML = "";
+    statusEl.textContent = location.protocol === "file:"
+      ? "The leaderboard only works on the published site, not from a file on your computer."
+      : "The leaderboard isn’t available right now.";
+  }
+}
+
+let submitting = false;
+async function submitScore() {
+  if (state !== "result" || round.submitted || submitting) return;
+  const name = $("lbName").value.trim();
+  if (!name) { $("lbStatus").textContent = "Type a name first."; $("lbName").focus(); return; }
+  submitting = true;
+  $("lbSubmit").disabled = true;
+  $("lbStatus").textContent = "Sending your score…";
+  try {
+    const r = await fetch(API, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, silver: round.silver })
+    });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || "Something went wrong.");
+    round.submitted = true;
+    round.myEntryId = data.entry.id;
+    $("submitArea").hidden = true;
+    const rank = data.entry.rank;
+    $("lbStatus").textContent = rank && rank <= data.scores.length
+      ? `You’re #${rank} on the leaderboard!`
+      : `Score saved. You’re #${rank}, just outside the top ${data.scores.length} shown here.`;
+    renderBoard($("resultBoard"), data.scores, data.entry.id);
+  } catch (err) {
+    $("lbStatus").textContent = location.protocol === "file:"
+      ? "The leaderboard only works on the published site, not from a file on your computer."
+      : err.message;
+  } finally {
+    submitting = false;
+    if (!round.submitted) $("lbSubmit").disabled = false;
+  }
+}
+
+function showBoardPanel() {
+  if (state !== "instructions") return;
+  showPanel("boardPanel", "boardBackBtn");
+  loadBoard($("boardList"), $("boardStatus"));
+}
+
+function hideBoardPanel() {
+  if (state !== "instructions") return;
+  showPanel("instructionsPanel", "openBtn");
 }
 
 function startShop() {
@@ -814,6 +936,9 @@ function startShop() {
 const guard = (fn) => (e) => { if (performance.now() - lastScreenChange >= 300) fn(e); };
 $("introPortrait").innerHTML = portrait(EA_NASIR, "sly", 92);
 $("openBtn").addEventListener("click", guard(startShop));
+$("viewBoardBtn").addEventListener("click", guard(showBoardPanel));
+$("boardBackBtn").addEventListener("click", guard(hideBoardPanel));
+$("lbSubmit").addEventListener("click", submitScore);
 $("againBtn").addEventListener("click", guard(startShop));
 $("offerBtn").addEventListener("click", guard(makeOffer));
 $("toDeliverBtn").addEventListener("click", guard(toDelivery));
@@ -840,10 +965,12 @@ $("deliverList").addEventListener("click", guard((e) => {
 document.addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
   const t = e.target;
+  if (t === $("lbName")) { e.preventDefault(); submitScore(); return; }   // Enter in the name box submits the score
+  if (t === $("viewBoardBtn") || t === $("boardBackBtn") || t === $("lbSubmit")) return;   // these buttons handle Enter themselves
   if (t === $("minusBtn") || t === $("plusBtn") || (t.closest && t.closest("#gradePick, #deliverList, #respCounter"))) return;
   e.preventDefault();
   if (e.repeat || performance.now() - lastScreenChange < 250) return;
-  if (state === "instructions" || state === "result") startShop();
+  if ((state === "instructions" && $("boardPanel").hidden) || state === "result") startShop();
   else if (state === "offering") makeOffer();
   else if (state === "response" && deal.response.kind === "accept") toDelivery();
   else if (state === "response" && deal.response.kind === "walkout") walkoutNext();

@@ -99,3 +99,26 @@ The result screen lists all five with an arrow on the player's rating.
 
 ## Portraits
 Ea-nasir and every customer have simple drawn portraits inspired by Mesopotamian statues. No picture of Ea-nasir survives; all portraits are imagined. Customer expressions change with each response and inspection.
+
+## Leaderboard (version 5)
+- After the result, the player can enter a name (1–20 characters: letters, numbers, spaces, and simple punctuation) and submit their score once per round. Enter in the name box submits.
+- The leaderboard shows the top 20 scores from everyone, ranked by silver (ties: the earlier score ranks higher), with each player's name, silver, and merchant rating. The player's own new entry is highlighted with ▶.
+- The start screen has a **See the leaderboard** button.
+- Names are public. The game suggests a first name or nickname.
+
+**How it works:** the game sends scores to `api/scores.js`, a small server function Vercel runs automatically. Scores are stored in an Upstash Redis database connected through the Vercel Marketplace. The server keeps the best 200.
+
+**Protections (on the server, not just in the browser):**
+- The rating is calculated from the score on the server.
+- Scores above 75 (the most the rules allow) are rejected.
+- Names with code-like characters, or matching a short list of offensive words (including common letter swaps like "sh!t"), are rejected. Names are always displayed as plain text.
+- Each visitor can submit at most 5 scores per minute.
+
+**Known limit:** because the game runs in the player's browser, a determined person could send a fake score up to 75 without playing. That's normal for simple browser-game leaderboards. Entries can be deleted from the database in Vercel if needed.
+
+**Leaderboard test cases**
+1. Opened as a file on your computer: the leaderboard says it only works on the published site.
+2. On the live site, submit a name. → "You're #N on the leaderboard!" and your row is highlighted.
+3. Press Enter in the name box with it empty. → "Type a name first."
+4. Try to submit twice. → Only one entry is saved.
+5. Open the site on another device. → Your score appears there too.

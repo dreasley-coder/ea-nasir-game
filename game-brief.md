@@ -37,7 +37,7 @@ Negotiate, then decide which ingot to hand over. For each customer: claim a grad
 - Phone: tap the price controls and **Make offer**.
 
 ## Not in the first version
-Real money, accounts, AI-written customers, online leaderboards, sound, animation beyond simple changes, more than five customers.
+Real money, accounts, AI-written customers, sound, animation beyond simple changes, more than five customers.
 
 ## Five checks that prove it works
 1. Nothing happens until Open the shop is pressed, then "Customer 1 of 5" appears.
@@ -47,4 +47,4 @@ Real money, accounts, AI-written customers, online leaderboards, sound, animatio
 5. After customer 5, the rating matches total silver, and Open a new shop resets everything.
 
 ## Status
-Version 4: negotiation, claimed vs delivered quality, and stock. Built and tested.
+Version 5: negotiation, claimed vs delivered quality, stock, and a shared online leaderboard. Built and tested.
